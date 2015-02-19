@@ -1,0 +1,6 @@
+*.json
+*build
+*.codelite
+*.clang
+*.project
+*.workspace
