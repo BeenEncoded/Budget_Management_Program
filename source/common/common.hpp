@@ -65,6 +65,8 @@ namespace common
         return success;
     }
     
+    int digit(const unsigned int&, const unsigned short&);
+    int digit_count(const unsigned int&);
     
 }
 
