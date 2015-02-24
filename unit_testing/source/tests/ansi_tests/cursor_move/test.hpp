@@ -7,6 +7,11 @@
 
 SUITE(cursor_move_test_suite)
 {
+    TEST(to_string_manual_test_case)
+    {
+        CHECK(test::test_to_string(3));
+    }
+    
     TEST(cursor_move_test_case)
     {
         test::test_cursor_movement();
