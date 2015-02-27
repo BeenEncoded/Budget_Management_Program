@@ -13,6 +13,8 @@ namespace ansi
     
     
     std::string move(const unsigned int&, const direction&);
+    void display_ansi(const std::string&);
+    
 }
 
 #endif

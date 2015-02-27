@@ -1,8 +1,0 @@
-#ifndef MONETARY_ALLOCATION_HPP_INCLUDED
-#define MONETARY_ALLOCATION_HPP_INCLUDED
-
-namespace data
-{
-}
-
-#endif

@@ -1,4 +1,5 @@
 #include <vector>
+#include <iostream>
 #include <string>
 #include <exception>
 #include <stdexcept>
@@ -33,7 +34,7 @@ namespace
     
     inline int digit(const unsigned int& num, const unsigned short& place)
     {
-        return (((num % pow(10, place)) - (num % pow(10, (place - 1)))) / (10 ^ (place - 1)));
+        return (((num % pow(10, place)) - (num % pow(10, (place - 1)))) / pow(10, (place - 1)));
     }
     
     inline int digit_count(const unsigned int& num)
@@ -66,7 +67,7 @@ namespace
         std::string number;
         
         char numbers[10] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
-        for(unsigned int x = 0; x < digits; ++x) number += numbers[digit(tempnum, (x + 1))];
+        for(unsigned int x = 0; x < digits; ++x) number.insert(number.begin(), numbers[digit(tempnum, (x + 1))]);
         if(num < 0) number.insert(number.begin(), '-');
         return number;
     }
@@ -77,7 +78,7 @@ namespace
         std::string number;
         
         char numbers[10] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
-        for(unsigned int x = 0; x < digits; ++x) number += numbers[digit(num, (x + 1))];
+        for(unsigned int x = 0; x < digits; ++x) number.insert(number.begin(), numbers[digit(num, (x + 1))]);
         return number;
     }
     
@@ -91,6 +92,17 @@ namespace ansi
         char d[4] = {'A', 'B', 'D', 'C'};
         std::string code(csi_char() + to_string(count) + d[dir]);
         return code;
+    }
+    
+    void display_ansi(const std::string& s)
+    {
+        using std::cout;
+        
+        for(std::string::const_iterator it(s.begin()); it != s.end(); ++it)
+        {
+            cout<< *it;
+        }
+        cout.flush();
     }
     
     
