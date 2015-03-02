@@ -1,3 +1,6 @@
+#include "defines.hpp"
+#if UNIT_TEST_PROG == true
+
 #include <iostream>
 #include <string>
 #include <unistd.h>
@@ -6,7 +9,8 @@
 #include "utility/ansi.hpp"
 #include "cursor_move.hpp"
 
-
+/*attn this set of functions is from ansi.cpp, so when you test, make sure this
+ * is correct. */
 namespace
 {
     template<unsigned char type>
@@ -156,3 +160,5 @@ namespace test
     
     
 }
+
+#endif

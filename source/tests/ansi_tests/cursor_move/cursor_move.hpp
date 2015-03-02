@@ -1,3 +1,6 @@
+#include "defines.hpp"
+#if UNIT_TEST_PROG == true
+
 #ifndef CURSOR_MOVE_HPP_INCLUDED
 #define CURSOR_MOVE_HPP_INCLUDED
 
@@ -8,4 +11,5 @@ namespace test
     
 }
 
+#endif
 #endif
