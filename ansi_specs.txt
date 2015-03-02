@@ -41,3 +41,23 @@ Display Manipulation:
     -  Show cursor:  CSI ?25h
 
 Colors: (yet to be supported)
+
+-------------------------------------------------------------------------------------------------------------------
+
+Data:
+
+    Cursor:  
+        -  coordinates
+        -  whether it's visible
+    
+    stdout Font:
+        -  color
+        -  emphasis/effect attributes:
+            *  bold
+            *  italicised
+            *  underlined
+            *  crossed-out
+        -  blink
+            *  on/off
+            *  speed: fast or slow
+
