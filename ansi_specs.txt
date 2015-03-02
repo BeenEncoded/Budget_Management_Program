@@ -1,0 +1,43 @@
+[CSI]:  ESC [
+
+Cursor Movement:
+    Relative:
+        -  up(int n)     CSI n A
+        -  down(int n)   CSI n A
+        -  left(int n)   CSI n D
+        -  right(int n)  CSI n C
+
+        -  Beginning of next line (int n)  CSI n E
+
+        -  Beginning of previous line (int n)  CSI n F
+        -  Save the cursor position:     CSI s
+        -  Restore the cursor position:  CSI u
+    
+    Absolute:
+        -  go to X (horizontal absolute) (int n)  CSI n G
+        -  go to coordinates (int y, int x)       CSI y ; x H
+            Defaults to 1;1 (or the top left corner) if no args are given.
+
+
+Display Manipulation:
+    -  Erase display (int n):  CSI n J
+        if n is 0 or missing, erase from cursor to the end of the screen.
+        If n is 1, then erase from the cursor to the beginning of the screen.
+        If n is 2, then it will erase the entire screen.
+
+    -  Erase line (int n): CSI n K
+        If n is 0 or missing, it erases from the cursor to the end of the line.
+        If n is 1, then it will clear from the cursor to the beginning of the line.
+        If n is 2, it clears the entire line.
+        This does not change the position of the cursor.
+
+    -  Scroll up (int n): CSI n S
+        Scroll a whole page up by n lines.
+
+    -  Scroll down (int n): CSI n T
+        Scroll whole page down by n lines.
+    
+    -  Hide cursor:  CSI ?25l
+    -  Show cursor:  CSI ?25h
+
+Colors: (yet to be supported)
