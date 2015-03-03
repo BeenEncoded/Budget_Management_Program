@@ -51,7 +51,7 @@ set(BOOST_LIB_COMPONENTS system filesystem) #change these library filenames if n
 set(BOOST_LIB_COMPONENTS_LITERAL libboost_system.a libboost_filesystem.a)
 
 #Additional Libraries
-set(USING_ADDITIONAL_LIBS false)
+set(USING_ADDITIONAL_LIBS true)
 set(ADDITIONAL_LIB_COMPONENTS_LITERAL libUnitTest++.a) #add additional misc libs here
 
 #ncurses settings

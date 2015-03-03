@@ -6,7 +6,7 @@
 
 #include <unittest++/UnitTest++.h>
 
-#include "ansi_tests/cursor_move/test.hpp"
+#include "ansi_tests/tests_included.hpp"
 
 namespace
 {
