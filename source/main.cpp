@@ -4,6 +4,7 @@
 #include "tests/unit_tests.hpp"
 #endif
 
+
 int main(int count __attribute__((unused)), char **vec __attribute__((unused)))
 {
 #if UNIT_TEST_PROG == true

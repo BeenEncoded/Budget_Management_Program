@@ -23,6 +23,7 @@ namespace ansi
         std::string restore_pos(); //test
         std::string goto_x(const unsigned int&); //test
         std::string hide(const bool&); //test
+        std::string jump(const unsigned int&, const unsigned int&);
         
     }
     

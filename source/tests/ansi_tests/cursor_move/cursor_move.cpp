@@ -96,6 +96,7 @@ namespace
     void display_in_direction(const std::string&, const ansi::cursor::direction&);
     void display_text_as_box(const std::string&, const unsigned int&, const unsigned int&);
     ansi::cursor::direction inverse_direction(const ansi::cursor::direction&);
+    void display_box(const char&, const unsigned int&, const unsigned int&);
     
     
     
@@ -114,8 +115,14 @@ namespace
             for(std::string::const_iterator it(s.begin()); it != s.end(); ++it)
             {
                 cout<< *it;
-                if((d == ansi::cursor::up) || (d == ansi::cursor::down)) ansi::display_ansi(move(1, d) + move(1, ansi::cursor::left));
-                else display_ansi(move(2, ansi::cursor::left));
+                if((d == ansi::cursor::up) || (d == ansi::cursor::down))
+                {
+                    ansi::display_ansi(move(1, d) + move(1, ansi::cursor::left));
+                }
+                else
+                {
+                    display_ansi(move(2, ansi::cursor::left));
+                }
             }
         }
         cout.flush();
@@ -132,16 +139,34 @@ namespace
                 ansi::cursor::left,
                 ansi::cursor::up};
         bool use_width(true);
+        unsigned int side_length(width);
         
-        for(unsigned int x(0), side(0); x < s.size(); use_width = ((side % 2) == 0), x += (use_width ? width : hieght), ++side)
+        for(unsigned int x(0), side(0); x < s.size();
+                use_width = (((side + 1) % 2) == 0),
+                side_length = ((use_width ? width : hieght) - 1),
+                x += (((x + side_length) < s.size()) ? side_length : (s.size() - x)), 
+                ++side)
         {
             display_in_direction(s.substr(x, 
-                    (((x + (use_width ? width : hieght) + 1) >= s.size()) ? (s.size() - x) : (use_width ? width : hieght))), 
+                    (((x + side_length) >= s.size()) ? (s.size() - x) : side_length)), 
                     dir_order[side % 4]);
-            display_ansi(move(1, inverse_direction(dir_order[side % 4])));
-            display_ansi(move(1, dir_order[(side + 1) % 4]));
+            display_ansi(move(1, inverse_direction(dir_order[(side % 4)])));
+            display_ansi(move(1, dir_order[((side + 1) % 4)]));
             usleep(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::milliseconds(1000 / 2)).count());
         }
+    }
+    
+    inline void display_box(const char& ch, const unsigned int& w, const unsigned int& h)
+    {
+        using ansi::display_ansi;
+        using ansi::cursor::move;
+        
+        display_in_direction(std::string(w, ch), ansi::cursor::right);
+        display_ansi(move(1, ansi::cursor::down) + move(1, ansi::cursor::left));
+        display_in_direction(std::string((h - 2), ch), ansi::cursor::down);
+        display_in_direction(std::string(w, ch), ansi::cursor::left);
+        display_ansi(move(1, ansi::cursor::right) + move(1, ansi::cursor::up));
+        display_in_direction(std::string((h - 2), ch), ansi::cursor::up);
     }
     
     inline ansi::cursor::direction inverse_direction(const ansi::cursor::direction& d)
@@ -196,11 +221,15 @@ namespace test
         
         cout<< "temps: \""<< temps<< "\""<< endl;
         cout<< "as a box: ";
+        cout.flush();
         for(unsigned int x = 2; x < 5; ++x)
         {
             display_text_as_box(temps, x, x);
             display_ansi(move((x + 1), ansi::cursor::down));
         }
+        display_ansi(ansi::cursor::jump(2, 1));
+        display_box('*', 70, 20);
+        display_ansi(move(21, ansi::cursor::down));
     }
     
     bool test_to_string(const int& x)
