@@ -3,8 +3,8 @@
 
 #include <iostream>
 #include <string>
-#include <unistd.h>
 #include <chrono>
+#include <unistd.h>
 
 #include "utility/ansi.hpp"
 #include "cursor_move.hpp"
@@ -97,6 +97,8 @@ namespace
     void display_text_as_box(const std::string&, const unsigned int&, const unsigned int&);
     ansi::cursor::direction inverse_direction(const ansi::cursor::direction&);
     void display_box(const char&, const unsigned int&, const unsigned int&);
+    void display_br(const std::string&);
+    void msleep(const unsigned int&);
     
     
     
@@ -152,7 +154,6 @@ namespace
                     dir_order[side % 4]);
             display_ansi(move(1, inverse_direction(dir_order[(side % 4)])));
             display_ansi(move(1, dir_order[((side + 1) % 4)]));
-            usleep(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::milliseconds(1000 / 2)).count());
         }
     }
     
@@ -205,6 +206,40 @@ namespace
         return (ansi::cursor::direction)0;
     }
     
+    inline void display_br(const std::string& s)
+    {
+        using namespace ansi;
+        using cursor::jump;
+        using std::cout;
+        
+        display_ansi(ansi::cursor::save_pos());
+        
+        unsigned int x(80), y(25);
+        
+        if(s.size() >= 80)
+        {
+            x = (s.size() % 80);
+            if(x == 0) x = 1;
+            y -= (s.size() / 80);
+        }
+        else
+        {
+            x -= s.size();
+        }
+        display_ansi(jump(x, y));
+        display_ansi(ansi::display::clear_line(2) + ansi::display::clear_screen(0));
+        cout<< s;
+        cout.flush();
+        display_ansi(ansi::cursor::restore_pos());
+    }
+    
+    inline void msleep(const unsigned int& ms)
+    {
+        using namespace std::chrono;
+        
+        usleep(duration_cast<microseconds>(milliseconds(ms)).count());
+    }
+    
     
 }
 
@@ -219,6 +254,7 @@ namespace test
         
         std::string temps("Hello World!");
         
+        display_br("Testing cursor movement...");
         cout<< "temps: \""<< temps<< "\""<< endl;
         cout<< "as a box: ";
         cout.flush();
@@ -230,11 +266,41 @@ namespace test
         display_ansi(ansi::cursor::jump(2, 1));
         display_box('*', 70, 20);
         display_ansi(move(21, ansi::cursor::down));
+        display_br("DONE!");
+        msleep(2000);
     }
     
     bool test_to_string(const int& x)
     {
         return (std::to_string(x) == ::to_string(x));
+    }
+    
+    void test_clear_screen()
+    {
+        using std::cout;
+        using std::endl;
+        using namespace ansi;
+        using ansi::display::clear_screen;
+        
+        std::string temps("Hello \nWorld!\nnewline??");
+        
+        for(unsigned int x = 0; x < 10; ++x)
+        {
+            display_ansi(ansi::cursor::hide(((x % 2) == 0)));
+            if((x % 2) == 0)
+            {
+                display_ansi(clear_screen(2));
+                display_ansi(ansi::cursor::jump(1, 1));
+            }
+            else
+            {
+                cout<< temps;
+                cout.flush();
+            }
+            display_br(std::string("Testing clear screen: ") + 
+                    (((x % 2) == 0) ? "hiding" : "showing"));
+            msleep(500);
+        }
     }
     
     

@@ -114,7 +114,7 @@ namespace ansi
             return (csi_char() + 's');
         }
         
-        std::string restor_pos()
+        std::string restore_pos()
         {
             return (csi_char() + 'u');
         }

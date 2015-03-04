@@ -8,6 +8,7 @@ namespace test
 {
     void test_cursor_movement();
     bool test_to_string(const int&);
+    void test_clear_screen();
     
 }
 

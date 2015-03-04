@@ -18,6 +18,11 @@ SUITE(cursor_move_test_suite)
         test::test_cursor_movement();
     }
     
+    TEST(clear_screen_test_test_case)
+    {
+        test::test_clear_screen();
+    }
+    
     
 }
 

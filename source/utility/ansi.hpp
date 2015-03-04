@@ -19,10 +19,10 @@ namespace ansi
         
         
         std::string move(const unsigned int&, const direction&);
-        std::string save_pos(); //test
-        std::string restore_pos(); //test
-        std::string goto_x(const unsigned int&); //test
-        std::string hide(const bool&); //test
+        std::string save_pos();
+        std::string restore_pos();
+        std::string goto_x(const unsigned int&);
+        std::string hide(const bool&);
         std::string jump(const unsigned int&, const unsigned int&);
         
     }
@@ -30,9 +30,7 @@ namespace ansi
     //functions that modify the way glyphs are displayed, or the glyphs cuyrrently being displayed:
     namespace display
     {
-        //test
         std::string clear_screen(const unsigned short&); //0: erase to end; 1: erase to beg; 2: erase all
-        //test
         std::string clear_line(const unsigned short&);   //(doesn't change cursor pos) 0: erase to end; 1: erase to beg; 2: erase all
         
     }
