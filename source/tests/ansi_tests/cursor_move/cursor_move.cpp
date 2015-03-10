@@ -206,6 +206,7 @@ namespace
         return (ansi::cursor::direction)0;
     }
     
+    /* Display_bottom_right */
     inline void display_br(const std::string& s)
     {
         using namespace ansi;
