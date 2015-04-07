@@ -3,6 +3,8 @@
 #include <iostream>
 #include <string>
 #include <sstream>
+#include <vector>
+#include <cstring>
 
 #include "global/global_defines.hpp"
 
@@ -78,6 +80,69 @@ namespace common
             }
         }
         return success;
+    }
+    
+    template<typename type>
+    std::istream& in_mem(std::istream& in, type& t)
+    {
+        t = type();
+        char *mem(new char[sizeof(type)]);
+        
+        in.peek();
+        if(in.good())
+        {
+            for(unsigned int x = 0; ((x < sizeof(type)) && in.good()); ++x)
+            {
+                mem[x] = in.get();
+            }
+            memcpy(&t, mem, sizeof(type));
+        }
+        delete[] mem;
+        return in;
+    }
+    
+    template<typename type>
+    std::ostream& out_mem(std::ostream& out, const type& t)
+    {
+        char *mem(new char[sizeof(type)]);
+        
+        memcpy(mem, &t, sizeof(type));
+        if(out.good())
+        {
+            for(unsigned int x = 0; x < sizeof(type); ++x)
+            {
+                out<< mem[x];
+            }
+        }
+        delete[] mem;
+        return out;
+    }
+    
+    /**
+     * @brief distributes an integer equally throughout a list of elements
+     * given the element type can be accessed.  Distribution is done by
+     * settings each element to (val / v.size()).  The remainder is then added,
+     * if there is any.
+     * @param val value to distribute.
+     * @param v list of elements.
+     * @param access The function used to access the number stored at
+     * element.  Provided for use with structs, etc...
+     */
+    template<typename type1, typename type2>
+    inline void distribute_equally(const type1& val, std::vector<type2> v,
+            void (*access)(type2&, type1*&))
+    {
+        type1 *value(nullptr);
+        for(typename std::vector<type2>::iterator it(v.begin()); it != v.end(); ++it)
+        {
+            access(*it, value);
+            (*value) = ((type1)val / (type1)v.size());
+        }
+        for(unsigned int x = 0; x < ((type1)val % (type1)v.size()); ++x)
+        {
+            access(v[x], value);
+            ++(*value);
+        }
     }
     
     int digit(const unsigned int&, const unsigned short&);

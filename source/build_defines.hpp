@@ -5,5 +5,4 @@
 
 // turns unit tests on; make sure you link to unit test++!
 #define UNIT_TEST_PROG false
-
 #endif

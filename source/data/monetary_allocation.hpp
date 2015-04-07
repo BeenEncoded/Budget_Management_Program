@@ -1,57 +1,82 @@
 #ifndef MONETARY_ALLOCATION_HPP_INCLUDED
 #define MONETARY_ALLOCATION_HPP_INCLUDED
-#include <utility>
 #include <vector>
 #include <string>
+#include <iostream>
 
 #include "utility/time_class.hpp"
 
 namespace data
 {
-    typedef long double money_t;
-    typedef unsigned short priority_t;
+    typedef long long money_t;
     
-    typedef class budget_class budget_class;
     typedef struct money_alloc_data money_alloc_data;
+    typedef struct budget_data budget_data;
     
+    std::istream& operator>>(std::istream&, money_alloc_data&);
+    std::ostream& operator<<(std::ostream&, const money_alloc_data&);
     
+    std::istream& operator>>(std::istream&, budget_data&);
+    std::ostream& operator<<(std::ostream&, const budget_data&);
+    
+    /**
+     * @class money_alloc_data
+     * @author Jonathan Whitlock
+     * @date 03/28/2015
+     * @file monetary_allocation.hpp
+     * @brief Stores a single allocation of money.
+     */
     typedef struct money_alloc_data
     {
-        explicit money_alloc_data();               //todo
-        explicit money_alloc_data(const money_t&); //todo
-        explicit money_alloc_data(const money_t&, const priority_t&); //todo
+        typedef unsigned long long ID_T;
+        
+        money_alloc_data(const money_alloc_data&) noexcept;
+        money_alloc_data(money_alloc_data&&) noexcept;
+        explicit money_alloc_data(const std::string&, const money_t&) noexcept;
+        explicit money_alloc_data() noexcept;
+        
         ~money_alloc_data();
         
-        money_alloc_data& operator=(const money_alloc_data&); //todo
-        bool operator==(const money_alloc_data&) const;       //todo
-        bool operator!=(const money_alloc_data&) const;       //todo
-        bool operator<(const money_alloc_data&) const;        //todo    
-        bool operator<=(const money_alloc_data&) const;       //todo
-        bool operator>(const money_alloc_data&) const;        //todo
-        bool operator>=(const money_alloc_data&) const;       //todo
+        money_alloc_data& operator=(const money_alloc_data&);
+        money_alloc_data& operator=(money_alloc_data&&) noexcept;
+        bool operator==(const money_alloc_data&) const noexcept;
+        bool operator!=(const money_alloc_data&) const noexcept;
         
+        std::string name;
         money_t value;
-        std::pair<bool, float> percent; //percent: can be turned on/off
-        priority_t priority;
-        
+        ID_T id;
     } money_alloc_data;
     
-    typedef class budget_class
+    
+    /**
+     * @class budget_data
+     * @author Jonathan Whitlock
+     * @date 03/28/2015
+     * @file monetary_allocation.hpp
+     * @brief Stores data regarding a budget.
+     */
+    typedef struct budget_data
     {
-    public:
-        explicit budget_class(); //todo
-        ~budget_class();         //todo
+        budget_data(const budget_data&) noexcept;
+        budget_data(budget_data&&) noexcept;
+        explicit budget_data() noexcept;
+        explicit budget_data(const money_t&) noexcept;
         
-        void devide_equally(); //todo
-        void apply_percentages();  //todo
-        void set_all_percents(const bool&);  //todo
-        money_t money_left() const;  //todo
+        ~budget_data();
         
-        money_t total; //total amount of money to spend
-    private:
-        std::vector<money_alloc_data> allocations;
-        tdata::time_class date;
-    } budget_class;
+        budget_data& operator=(const budget_data&);
+        budget_data& operator=(budget_data&&) noexcept;
+        bool operator==(const budget_data&) const noexcept;
+        bool operator!=(const budget_data&) const noexcept;
+        
+        money_t total_money;
+        std::vector<money_alloc_data> allocs;
+        tdata::time_class timestamp;
+    } budget_data;
+    
+    money_alloc_data::ID_T new_alloc_id(const std::vector<money_alloc_data>&);
+    
+    
 }
 
 #endif

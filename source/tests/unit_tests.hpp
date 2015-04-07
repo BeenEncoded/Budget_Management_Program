@@ -5,8 +5,13 @@
 #define UNIT_TESTS_HPP_INCLUDED
 
 #include <unittest++/UnitTest++.h>
+#include <ctime>
+#include <cstdlib>
 
-#include "ansi_tests/tests_included.hpp"
+//Tests:
+
+//#include "ansi_tests/tests_included.hpp"
+#include "monetary_allocation_tests/tests_included.hpp"
 
 namespace
 {
@@ -15,6 +20,7 @@ namespace
     
     inline void run_tests()
     {
+        srand(std::time(nullptr));
         UnitTest::RunAllTests();
     }
     

@@ -36,6 +36,8 @@ namespace tdata
     typedef class time_class
     {
     public:
+        time_class(const time_class&) noexcept;
+        time_class(time_class&&) noexcept;
         explicit time_class(const struct tm&);
         explicit time_class();
         ~time_class();
@@ -43,6 +45,7 @@ namespace tdata
         const struct tm& value() const;
         
         time_class& operator=(const time_class&);
+        time_class& operator=(time_class&&) noexcept;
         time_class& operator=(const struct tm&);
         
         //comparisons
