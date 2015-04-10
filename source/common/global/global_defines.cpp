@@ -21,8 +21,8 @@ namespace
             key_code_data((char)27),  //escape
             key_code_data(std::vector<int>({27, 91, 51, 126})), //delete
             key_code_data(std::vector<int>({27, 91, 50, 126})), //insert
-            key_code_data(std::vector<int>({27, 79, 70})),      //end
-            key_code_data(std::vector<int>({27, 79, 72})),      //home
+            key_code_data(std::vector<int>({27, 91, 70})),      //end
+            key_code_data(std::vector<int>({27, 91, 72})),      //home
             key_code_data(std::vector<int>({27, 91, 65})),      //up
             key_code_data(std::vector<int>({27, 91, 66})),      //down
             key_code_data(std::vector<int>({27, 91, 68})),      //left

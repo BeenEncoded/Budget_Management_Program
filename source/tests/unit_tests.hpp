@@ -8,10 +8,11 @@
 #include <ctime>
 #include <cstdlib>
 
-//Tests:
+//Unit Tests:
 
 //#include "ansi_tests/tests_included.hpp"
-#include "monetary_allocation_tests/tests_included.hpp"
+//#include "monetary_allocation_tests/tests_included.hpp"
+#include "common_functions/tests.hpp"
 
 namespace
 {

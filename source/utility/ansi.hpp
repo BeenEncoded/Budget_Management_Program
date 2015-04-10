@@ -27,7 +27,7 @@ namespace ansi
         
     }
     
-    //functions that modify the way glyphs are displayed, or the glyphs cuyrrently being displayed:
+    //functions that modify the way glyphs are displayed, or the glyphs currently being displayed:
     namespace display
     {
         std::string clear_screen(const unsigned short&); //0: erase to end; 1: erase to beg; 2: erase all
