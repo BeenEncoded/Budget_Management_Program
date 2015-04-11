@@ -5,9 +5,10 @@
 #include <utility>
 
 #include "common/common.hpp"
-#include "monetary_allocation.hpp"
+#include "budget_data.hpp"
 #include "common/global/global_defines.hpp"
 #include "utility/time_class.hpp"
+#include "utility/filesystem.hpp"
 
 namespace
 {
@@ -103,8 +104,14 @@ namespace data
         if(in.good())
         {
             in_mem<money_alloc_data::ID_T>(in, m.id);
-            in_mem<money_t>(in, m.value);
-            safe_getline(in, m.name, mem_delim::value);
+            if(in.good()) in_mem<money_t>(in, m.value);
+            if(in.good())
+            {
+                if(!safe_getline(in, m.name, mem_delim::value))
+                {
+                    if(!in.fail()) in.setstate(std::ios_base::failbit);
+                }
+            }
         }
         return in;
     }
@@ -187,18 +194,25 @@ namespace data
         if(out.good())
         {
             out_mem<money_t>(out, b.total_money);
-            out<< b.timestamp;
+            if(out.good()) out<< b.timestamp;
             for(std::vector<money_alloc_data>::const_iterator it(b.allocs.begin()); ((it != b.allocs.end()) && out.good()); ++it)
             {
                 out<< (*it);
             }
-            out<< mem_delim::value;
+            if(out.good()) out<< mem_delim::value;
         }
         return out;
     }
     
+    /**
+     * @brief reads budget_data from a stream.
+     * @param in the stream to read from.
+     * @param b the object to store it in.
+     * @return a stream.  Failbit is set if the read fails.
+     */
     std::istream& operator>>(std::istream& in, budget_data& b)
     {
+        using std::ios_base::failbit;
         using common::in_mem;
         
         b = budget_data();
@@ -207,6 +221,11 @@ namespace data
         {
             in_mem<money_t>(in, b.total_money);
             if(in.good()) in>> b.timestamp;
+            else
+            {
+                in.setstate(failbit);
+                return in;
+            }
             
             in.peek();
             while(in.good() && (in.peek() != EOF) && (in.peek() != mem_delim::value))
@@ -215,11 +234,11 @@ namespace data
                 in>> b.allocs.back();
                 in.peek();
             }
-            if(in.peek() == mem_delim::value)
-            {
-                in.get();
-                in.peek();
-            }
+            if(in.peek() == mem_delim::value) in.get();
+        }
+        else
+        {
+            in.setstate(failbit);
         }
         return in;
     }
