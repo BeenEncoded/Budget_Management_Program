@@ -4,8 +4,40 @@
 #include <string>
 #include <vector>
 
+#include "global/global_defines.hpp"
+
 namespace common
 {
+    template<typename type> struct result_data;
+    
+    /**
+     * @class result_data
+     * @author Jonathan Whitlock
+     * @date 04/12/2015
+     * @file common.hpp
+     * @brief Represents the result of an operation.
+     */
+    template<typename type = char>
+    struct result_data
+    {
+        explicit result_data() noexcept;
+        result_data(result_data<type>&&) noexcept;
+        result_data(const result_data<type>&) noexcept;
+        
+        ~result_data();
+        
+        result_data<type>& operator=(const result_data<type>&);
+        result_data<type>& operator=(result_data<type>&&) noexcept;
+        bool operator!() const;
+        bool operator==(const result_data<type>&) const;
+        bool operator!=(const result_data<type>&) const;
+        
+        bool success;
+        type data;
+        std::string message;
+    };
+    
+    
     int digit(const unsigned int&, const unsigned short&);
     int digit_count(const unsigned int&);
     bool is_letter(const char&);
@@ -26,8 +58,9 @@ namespace common
     template<typename type> std::istream& in_mem(std::istream&, type&);
     template<typename type> std::ostream& out_mem(std::ostream&, const type&);
     template<typename type1, typename type2> void distribute_equally(const type1&, std::vector<type2>&, void (*access)(type2&, type1*&));
-    template<typename type> bool load_from_file(const std::string&, type&);
-    template<typename type> bool save_to_file(const std::string&, const type&);
+    template<typename type> result_data<> load_from_file(const std::string&, type&);
+    template<typename type> result_data<> save_to_file(const std::string&, const type&);
+    
     
 }
 

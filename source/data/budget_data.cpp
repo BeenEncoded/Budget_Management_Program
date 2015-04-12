@@ -212,7 +212,7 @@ namespace data
      */
     std::istream& operator>>(std::istream& in, budget_data& b)
     {
-        using std::ios_base::failbit;
+        using std::ios_base;
         using common::in_mem;
         
         b = budget_data();
@@ -223,7 +223,7 @@ namespace data
             if(in.good()) in>> b.timestamp;
             else
             {
-                in.setstate(failbit);
+                in.setstate(ios_base::failbit);
                 return in;
             }
             
@@ -238,7 +238,7 @@ namespace data
         }
         else
         {
-            in.setstate(failbit);
+            in.setstate(ios_base::failbit);
         }
         return in;
     }

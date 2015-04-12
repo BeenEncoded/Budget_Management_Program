@@ -4,35 +4,112 @@
 #include <sstream>
 #include <fstream>
 #include <cstring>
+#include <cmath>
 
 #include "utility/ansi.hpp"
 #include "global/global_defines.hpp"
-#include "common.hpp"
+#include "common/common.hpp"
 #include "utility/filesystem.hpp"
 #include "iofunctions.hpp"
+#include "data/budget_data.hpp"
 
 namespace
 {
-    unsigned long long pow(const unsigned int&, const unsigned int&);
+    std::string parent_path(const std::string&);
     
     
-    /**
-     * @brief raises a number to the specified power.
-     * @param a number to apply exponent to.
-     * @param b exponent.
-     * @return (a ^ b)
-     */
-    inline unsigned long long pow(const unsigned int& a, const unsigned int& b)
+    inline std::string parent_path(const std::string& s)
     {
-        if(b == 1) return a;
-        else if(b == 0) return 1;
+        std::string temps(s);
+        std::string::size_type pos(temps.rfind('/'));
         
-        unsigned long long newa(a);
-        for(unsigned int x = 1; x < b; ++x) newa *= a;
-        return newa;
+        if((pos != std::string::npos) && (pos > 0))
+        {
+            temps.erase((temps.begin() + pos), temps.end());
+        }
+        else temps.erase();
+        return temps;
     }
     
     
+}
+
+//result_data member functions:
+namespace common
+{
+    template<typename type>
+    result_data<type>::result_data() noexcept : 
+            success{false},
+            data{},
+            message{}
+    {
+    }
+    
+    template<typename type>
+    result_data<type>::result_data(const result_data<type>& d) noexcept : 
+            success{d.success},
+            data{d.data},
+            message{d.message}
+    {
+    }
+    
+    template<typename type>
+    result_data<type>::result_data(result_data<type>&& d) noexcept : 
+            success{std::move(d.success)},
+            data{std::move(d.data)},
+            message{std::move(d.message)}
+    {
+    }
+    
+    template<typename type>
+    result_data<type>::~result_data()
+    {
+    }
+    
+    template<typename type>
+    result_data<type>& result_data<type>::operator=(const result_data<type>& r)
+    {
+        if(this != &r)
+        {
+            this->success = r.success;
+            this->data = r.data;
+            this->message = r.message;
+        }
+        return *this;
+    }
+    
+    template<typename type>
+    result_data<type>& result_data<type>::operator=(result_data<type>&& r) noexcept
+    {
+        this->success = std::move(r.success);
+        this->data = std::move(r.data);
+        this->message = std::move(r.message);
+        return *this;
+    }
+    
+    template<typename type>
+    bool result_data<type>::operator!() const
+    {
+        return !this->success;
+    }
+    
+    template<typename type>
+    bool result_data<type>::operator==(const result_data<type>& t) const
+    {
+        return ((this->success == t.success) && 
+                (this->data == t.data) && 
+                (this->message == t.message));
+    }
+    
+    template<typename type>
+    bool result_data<type>::operator!=(const result_data<type>& t) const
+    {
+        return ((this->success != t.success) || 
+                (this->data != t.data) || 
+                (this->message != t.message));
+    }
+    
+    template struct result_data<char>;
 }
 
 namespace common
@@ -48,7 +125,7 @@ namespace common
      */
     int digit(const unsigned int& num, const unsigned short& place)
     {
-        return (((num % pow(10, place)) - (num % pow(10, (place - 1)))) / (10 ^ (place - 1)));
+        return (((num % (unsigned int)pow(10, place)) - (num % (unsigned int)pow(10, (place - 1)))) / (10 ^ (place - 1)));
     }
     
     /**
@@ -435,33 +512,85 @@ namespace common
     }
     
     template<typename type>
-    bool load_from_file(const std::string& path, type& t)
+    result_data<> load_from_file(const std::string& path, type& t)
     {
         using fsys::is_file;
         using fsys::is_symlink;
         
         t = type();
         
-        if(is_symlink(path).value || !is_file(path).value) return false;
+        result_data<> result;
+        result.message = "ERROR IN template<typename type> bool load_from_file(\
+const std::string&, type&):  ";
+        
+        if(is_symlink(path).value || !is_file(path).value)
+        {
+            result.message += ("\"" + path + "\" is a symlink or doesn't exist!  \
+Could not load it.");
+            return result;
+        }
         
         std::ifstream in(path, std::ios::in);
-        bool success(false);
         
         in.peek();
         if(in.good())
         {
             in>> t;
-            success = !in.fail();
+            if(in.fail())
+            {
+                result.message += "Stream operation failed!";
+                return result;
+            }
+        }
+        else
+        {
+            result.message += "Stream could not be opened!";
+            return result;
         }
         in.close();
-        return success;
+        result.success = true;
+        result.message.erase();
+        return result;
     }
+    
+    template result_data<> load_from_file<data::budget_data>(const std::string&, data::budget_data&);
     
     template<typename type>
-    bool save_to_file(const std::string& path, const type& t)
+    result_data<> save_to_file(const std::string& path, const type& t)
     {
-        //cur_pos
+        using fsys::is_folder;
+        using fsys::is_symlink;
+        using fsys::create_folder;
+        
+        result_data<> result;
+        
+        result.message = "ERROR IN: template<typename type> \
+bool save_to_file(const std::string&, const type&):  ";
+        {
+            std::string f(parent_path(path));
+            if(!create_folder(f).value)
+            {
+                if(!is_folder(f).value)
+                {
+                    result.message += ("\"" + f + "\" Could not be created, and \
+doesn't exist!");
+                    return result;
+                }
+            }
+        }
+        
+        std::ofstream out(path, std::ios::out);
+        if(out.good()) out<< t;
+        if(out.fail())
+        {
+            if(out.is_open()) out.close();
+            result.message += "Stream operation failed!";
+            return result;
+        }
+        result.success = true;
+        result.message.erase();
+        return result;
     }
     
-    
+    template result_data<> save_to_file<data::budget_data>(const std::string&, const data::budget_data&);
 }
