@@ -19,6 +19,12 @@ namespace data
     std::istream& operator>>(std::istream&, budget_data&);
     std::ostream& operator<<(std::ostream&, const budget_data&);
     
+    std::istream& operator>>(std::istream&, std::vector<money_alloc_data>&);
+    std::ostream& operator<<(std::ostream&, const std::vector<money_alloc_data>&);
+    
+    std::istream& operator>>(std::istream&, std::vector<budget_data>&);
+    std::ostream& operator<<(std::ostream&, const std::vector<budget_data>&);
+    
     /**
      * @class money_alloc_data
      * @author Jonathan Whitlock

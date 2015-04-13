@@ -37,6 +37,11 @@ namespace
 //result_data member functions:
 namespace common
 {
+    /* The definition of result_data has to go before the rest of the functions'
+     * definitions because this object must be instantiated before it's use in 
+     * any of the functions. */
+    
+    
     template<typename type>
     result_data<type>::result_data() noexcept : 
             success{false},
@@ -109,7 +114,7 @@ namespace common
                 (this->message != t.message));
     }
     
-    template struct result_data<char>;
+    template struct result_data<void*>;
 }
 
 namespace common
@@ -461,6 +466,7 @@ namespace common
     
     template std::istream& in_mem(std::istream&, unsigned long long&);
     template std::istream& in_mem(std::istream&, long long&);
+    template std::istream& in_mem(std::istream&, std::size_t&);
     
     template<typename type>
     std::ostream& out_mem(std::ostream& out, const type& t)
@@ -483,6 +489,7 @@ namespace common
     
     template std::ostream& out_mem(std::ostream&, const unsigned long long&);
     template std::ostream& out_mem(std::ostream&, const long long&);
+    template std::ostream& out_mem(std::ostream&, const std::size_t&);
     
     /**
      * @brief distributes an integer equally throughout a list of elements
@@ -593,4 +600,85 @@ doesn't exist!");
     }
     
     template result_data<> save_to_file<data::budget_data>(const std::string&, const data::budget_data&);
+    
+    template<typename type>
+    std::ostream& write_vector(std::ostream& out, const std::vector<type>& v)
+    {
+        if(out.good())
+        {
+            out_mem<std::size_t>(out, v.size());
+            for(unsigned int x(0); ((x < v.size()) && out.good()); ++x)
+            {
+                out<< v[x];
+            }
+        }
+        return out;
+    }
+    
+    template std::ostream& write_vector<data::budget_data>(std::ostream&, const std::vector<data::budget_data>&);
+    template std::ostream& write_vector<data::money_alloc_data>(std::ostream&, const std::vector<data::money_alloc_data>&);
+    
+    template<typename type>
+    std::istream& read_vector(std::istream& in, std::vector<type>& v)
+    {
+        v.erase(v.begin(), v.end());
+        in.peek();
+        if(in.good())
+        {
+            std::size_t size(0);
+            
+            in_mem<std::size_t>(in, size);
+            for(std::size_t x(0); ((x < size) && in.good() && (in.peek() != EOF)); ++x)
+            {
+                v.push_back(type());
+                in>> v.back();
+                if(in.fail() && !in.eof()) v.pop_back();
+                in.peek();
+            }
+            in.peek();
+        }
+        return in;
+    }
+    
+    template std::istream& read_vector<data::budget_data>(std::istream&, std::vector<data::budget_data>&);
+    template std::istream& read_vector<data::money_alloc_data>(std::istream&, std::vector<data::money_alloc_data>&);
+    
+    /**
+     * @brief Peeks 'count' characters.  Can be used to check multi-char delimiters.
+     * The stream is garunteed to be left in the state it was found.
+     * @param in stream to peek
+     * @param count number of characters to peek.
+     * @return A string of the next 'count' characters.  Not garunteed to
+     * be of size 'count'.  If the end of the stream is reached before 'count'
+     * characters can be read, the operation is aborted, and the string is returned.
+     */
+    std::string peek_string(std::istream& in, const unsigned int& count)
+    {
+        std::string temps;
+        
+        in.peek();
+        if(in.good())
+        {
+            std::istream::pos_type pos(in.tellg());
+            for(unsigned int x(0); ((x < count) && (in.peek() != EOF) && in.good()); ++x) temps += in.get();
+            if(!in.good()) in.clear();
+            in.seekg(pos);
+        }
+        return temps;
+    }
+    
+    std::istream::pos_type inavail(std::istream& in)
+    {
+        std::istream::pos_type pos, count(0);
+        
+        if(in.good())
+        {
+            pos = in.tellg();
+            count = (in.seekg(0, std::ios_base::end).tellg() - pos);
+            in.seekg(pos);
+        }
+        return count;
+    }
+    
+    
 }

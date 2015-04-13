@@ -103,17 +103,30 @@ namespace data
         m = money_alloc_data();
         if(in.good())
         {
-            in_mem<money_alloc_data::ID_T>(in, m.id);
+            if(in.good()) in_mem<money_alloc_data::ID_T>(in, m.id);
             if(in.good()) in_mem<money_t>(in, m.value);
             if(in.good())
             {
                 if(!safe_getline(in, m.name, mem_delim::value))
                 {
-                    if(!in.fail()) in.setstate(std::ios_base::failbit);
+                    if(!in.fail()) 
+                    {
+                        in.setstate(std::ios_base::failbit);
+                    }
                 }
             }
         }
         return in;
+    }
+    
+    std::ostream& operator<<(std::ostream& out, const std::vector<money_alloc_data>& v)
+    {
+        return common::write_vector(out, v);
+    }
+    
+    std::istream& operator>>(std::istream& in, std::vector<money_alloc_data>& v)
+    {
+        return common::read_vector(in, v);
     }
     
     
@@ -195,11 +208,7 @@ namespace data
         {
             out_mem<money_t>(out, b.total_money);
             if(out.good()) out<< b.timestamp;
-            for(std::vector<money_alloc_data>::const_iterator it(b.allocs.begin()); ((it != b.allocs.end()) && out.good()); ++it)
-            {
-                out<< (*it);
-            }
-            if(out.good()) out<< mem_delim::value;
+            if(out.good()) out<< b.allocs;
         }
         return out;
     }
@@ -219,28 +228,30 @@ namespace data
         in.peek();
         if(in.good())
         {
-            in_mem<money_t>(in, b.total_money);
+            if(in.good()) in_mem<money_t>(in, b.total_money);
             if(in.good()) in>> b.timestamp;
             else
             {
                 in.setstate(ios_base::failbit);
                 return in;
             }
-            
-            in.peek();
-            while(in.good() && (in.peek() != EOF) && (in.peek() != mem_delim::value))
-            {
-                b.allocs.emplace_back();
-                in>> b.allocs.back();
-                in.peek();
-            }
-            if(in.peek() == mem_delim::value) in.get();
+            in>> b.allocs;
         }
         else
         {
-            in.setstate(ios_base::failbit);
+            if(!in.good() && !in.fail()) in.setstate(ios_base::failbit);
         }
         return in;
+    }
+    
+    std::ostream& operator<<(std::ostream& out, const std::vector<budget_data>& v)
+    {
+        return common::write_vector(out, v);
+    }
+    
+    std::istream& operator>>(std::istream& in, std::vector<budget_data>& v)
+    {
+        return common::read_vector(in, v);
     }
     
     

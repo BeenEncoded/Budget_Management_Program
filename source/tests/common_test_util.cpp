@@ -2,10 +2,12 @@
 #if UNIT_TEST_PROG == true
 
 #include <cstdlib>
+#include <vector>
 #include <string>
-#include "common/global/global_defines.hpp"
 
+#include "common/global/global_defines.hpp"
 #include "common_test_util.hpp"
+#include "data/budget_data.hpp"
 
 namespace
 {
@@ -75,6 +77,20 @@ namespace test
         {
             return random_string((std::string(LETTERS) + NUMBERS + std::string(SPECIALS)), min, max);
         }
+        
+        template<typename type>
+        type read_from_stream(const type& t)
+        {
+            type new_val;
+            std::stringstream ss;
+            
+            ss<< t;
+            ss>> new_val;
+            return new_val;
+        }
+        
+        template data::budget_data read_from_stream<data::budget_data>(const data::budget_data&);
+        template std::vector<data::budget_data> read_from_stream<std::vector<data::budget_data> >(const std::vector<data::budget_data>&);
         
         
     }

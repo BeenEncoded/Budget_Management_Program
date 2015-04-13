@@ -13,14 +13,19 @@ SUITE(budget_data_stream_operator_tests_test_suite)
     {
         using test::test_budget_data_streams;
         
-        for(unsigned int x(0); x < 100; ++x) CHECK(test_budget_data_streams());
+        for(unsigned int x(0); x < 10000; ++x) CHECK(test_budget_data_streams());
     }
     
     TEST(test_budget_data_multiple_writes_test)
     {
         using test::test_multiple_budget_streams;
         
-        for(unsigned int x(0); x < 100; ++x) CHECK(test_multiple_budget_streams());
+        for(unsigned int x(0); x < 10000; ++x) CHECK(test_multiple_budget_streams());
+    }
+    
+    TEST(test_budget_data_streams_no_budgets_test_case) //an empty vector
+    {
+        CHECK(test::test_empty_vec());
     }
     
     

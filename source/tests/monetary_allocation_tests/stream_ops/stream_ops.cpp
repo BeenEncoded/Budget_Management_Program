@@ -24,6 +24,7 @@ namespace
     std::vector<data::budget_data> random_budget_list(const unsigned int&, const unsigned int&);
     void display_failure(const data::budget_data&, const data::budget_data&);
     template<typename type> std::vector<type> read_vect_from_stream(const std::vector<type>&);
+    std::string budget_vec_display(const std::vector<data::budget_data>&);
     
     
     
@@ -60,9 +61,9 @@ namespace
      */
     inline std::string time_to_string(const tdata::time_class& t)
     {
-        std::stringstream ss;
-        ss<< t;
-        return ss.str();
+        return (std::to_string(t.hour())  + ":" + std::to_string(t.minute()) + std::string(" ") + 
+                (t.am() ? "AM" : "PM") + std::string("  |  (") + t.wday_name() + ") " + 
+                t.month_name() + " " + std::to_string(t.mday()) + ", " + std::to_string(t.gyear()));
     }
     
     /**
@@ -84,7 +85,7 @@ namespace
      */
     inline std::string budget_display(const data::budget_data& b)
     {
-        std::string disp("[$" + std::to_string(b.total_money) + " : " + time_to_string(b.timestamp) + " : ");
+        std::string disp("[$" + std::to_string(b.total_money) + " :: " + time_to_string(b.timestamp) + " :: ");
                 
         disp += "\n\t{\n";
         for(unsigned int x(0); x < b.allocs.size(); ++x) disp += ("\t\t" + alloc_display(b.allocs[x]) + "\n");
@@ -139,6 +140,23 @@ namespace
         return stuff;
     }
     
+    inline std::string budget_vec_display(const std::vector<data::budget_data>& b)
+    {
+        std::string temps(70, 'V');
+        
+        temps += "\n";
+        {
+            unsigned int x(0);
+            for(std::vector<data::budget_data>::const_iterator it(b.begin()); it != b.end(); ++it)
+            {
+                temps += ("Element " + std::to_string(++x) + ":\n");
+                temps += (budget_display(*it) + "\n\n");
+            }
+        }
+        temps += (std::string(70, '^') + "\n");
+        return temps;
+    }
+    
     
 }
 
@@ -180,8 +198,30 @@ namespace test
     
     bool test_multiple_budget_streams()
     {
-        std::vector<data::budget_data> data(std::move(random_budget_list(5, 15)));
-        return (data == read_vect_from_stream<data::budget_data>(data));
+        using test::common::read_from_stream;
+        using std::cout;
+        using std::endl;
+        
+        std::vector<data::budget_data> data(std::move(random_budget_list(5, 15))), 
+                result(std::move(read_from_stream(data)));
+        
+        if(result != data)
+        {
+            cout<< "data: "<< endl;
+            cout<< budget_vec_display(data)<< endl<< endl;
+            cout<< "Result: "<< endl;
+            cout<< budget_vec_display(result)<< endl<< endl;
+        }
+        
+        return (result == data);
+    }
+    
+    bool test_empty_vec()
+    {
+        std::vector<data::budget_data> data;
+        for(unsigned int x(0); x < 10; ++x) data.push_back(data::budget_data());
+        
+        return (test::common::read_from_stream(data) == data);
     }
     
     

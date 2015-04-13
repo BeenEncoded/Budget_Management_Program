@@ -7,6 +7,7 @@ namespace test
 {
     bool test_budget_data_streams();
     bool test_multiple_budget_streams();
+    bool test_empty_vec();
     
 }
 
