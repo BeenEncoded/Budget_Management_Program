@@ -629,7 +629,7 @@ doesn't exist!");
     
     /**
      * @brief Writes a vector of type 'type' to a stream.  Garunteed not to
-     * cause delimiter collisions.
+     * cause delimiter collisions.  Intended to use in operators.
      * @param out Stream to write to.
      * @param v The vector to write.
      * @return The stream.
@@ -653,7 +653,7 @@ doesn't exist!");
     
     /**
      * @brief Reads a vector of type 'type' from a stream.  Garunteed not to
-     * cause delimiter collisions.
+     * cause delimiter collisions. Intended to use in operators.
      * @param in The stream to read from.
      * @param v The vector to store the data in.
      * @return The stream.

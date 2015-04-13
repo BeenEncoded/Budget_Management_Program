@@ -103,7 +103,7 @@ namespace data
         m = money_alloc_data();
         if(in.good())
         {
-            if(in.good()) in_mem<money_alloc_data::ID_T>(in, m.id);
+            in_mem<money_alloc_data::ID_T>(in, m.id);
             if(in.good()) in_mem<money_t>(in, m.value);
             if(in.good())
             {
@@ -230,16 +230,7 @@ namespace data
         {
             if(in.good()) in_mem<money_t>(in, b.total_money);
             if(in.good()) in>> b.timestamp;
-            else
-            {
-                in.setstate(ios_base::failbit);
-                return in;
-            }
             in>> b.allocs;
-        }
-        else
-        {
-            if(!in.good() && !in.fail()) in.setstate(ios_base::failbit);
         }
         return in;
     }
