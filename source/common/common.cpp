@@ -311,6 +311,9 @@ namespace common
         return !canceled;
     }
     
+    /**
+     * @brief Wait for the user to press any key.
+     */
     void wait()
     {
         for(unsigned int x(0); x < 2; ++x) std::cout<< std::endl;
@@ -319,6 +322,9 @@ namespace common
         common::gkey();
     }
     
+    /**
+     * @brief Displays a string in the center of the screen.
+     */
     void center(const std::string& s)
     {
         using std::cout;
@@ -339,6 +345,11 @@ namespace common
         ansi::display_ansi(ansi::display::clear_screen(2) + ansi::cursor::jump(1, 1));
     }
     
+    /**
+     * @brief Propmpts the user with a question that should have a yes/no answer.
+     * @param message The message to display.  Defaults to "Are you sure?".
+     * @return True if the user picked "yes"
+     */
     bool prompt_user(const std::string& message)
     {
         using std::cout;
@@ -518,6 +529,13 @@ namespace common
         }
     }
     
+    /**
+     * @brief Loads an object from a file.  Type requirements include an overloaded 
+     * operator>>
+     * @param path The full path to the file.
+     * @param t The object to read the data into.
+     * @return result_data<>.
+     */
     template<typename type>
     result_data<> load_from_file(const std::string& path, type& t)
     {
@@ -562,6 +580,14 @@ Could not load it.");
     
     template result_data<> load_from_file<data::budget_data>(const std::string&, data::budget_data&);
     
+    /**
+     * @brief Saves an object to a file.  Type requirements include an overloaded
+     * operator<<
+     * @param path The full path to the file.  WARNING:  If the parent folders
+     * don't already exist, then they will be created.
+     * @param t The object to write.
+     * @return result_data<>.
+     */
     template<typename type>
     result_data<> save_to_file(const std::string& path, const type& t)
     {
@@ -601,6 +627,13 @@ doesn't exist!");
     
     template result_data<> save_to_file<data::budget_data>(const std::string&, const data::budget_data&);
     
+    /**
+     * @brief Writes a vector of type 'type' to a stream.  Garunteed not to
+     * cause delimiter collisions.
+     * @param out Stream to write to.
+     * @param v The vector to write.
+     * @return The stream.
+     */
     template<typename type>
     std::ostream& write_vector(std::ostream& out, const std::vector<type>& v)
     {
@@ -618,6 +651,13 @@ doesn't exist!");
     template std::ostream& write_vector<data::budget_data>(std::ostream&, const std::vector<data::budget_data>&);
     template std::ostream& write_vector<data::money_alloc_data>(std::ostream&, const std::vector<data::money_alloc_data>&);
     
+    /**
+     * @brief Reads a vector of type 'type' from a stream.  Garunteed not to
+     * cause delimiter collisions.
+     * @param in The stream to read from.
+     * @param v The vector to store the data in.
+     * @return The stream.
+     */
     template<typename type>
     std::istream& read_vector(std::istream& in, std::vector<type>& v)
     {
@@ -667,6 +707,10 @@ doesn't exist!");
         return temps;
     }
     
+    /**
+     * @brief Returns the number of bytes the current position is from
+     * the end of the stream.
+     */
     std::istream::pos_type inavail(std::istream& in)
     {
         std::istream::pos_type pos, count(0);
