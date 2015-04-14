@@ -3,14 +3,17 @@
 #include <iostream>
 #include <sstream>
 #include <fstream>
+#include <utility>
 #include <cstring>
 #include <cmath>
 
 #include "utility/ansi.hpp"
 #include "global/global_defines.hpp"
 #include "common/common.hpp"
+#include "common/global/program_data.hpp"
 #include "utility/filesystem.hpp"
 #include "iofunctions.hpp"
+#include "utility/time_class.hpp"
 #include "data/budget_data.hpp"
 
 namespace
@@ -115,6 +118,9 @@ namespace common
     }
     
     template struct result_data<void*>;
+    template struct result_data<global::program_data>;
+    template struct result_data<std::pair<tdata::time_class, data::money_t> >;
+    template struct result_data<bool>;
 }
 
 namespace common

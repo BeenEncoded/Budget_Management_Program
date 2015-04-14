@@ -93,6 +93,20 @@ namespace global
         return *this;
     }
     
+    bool program_data::operator==(const program_data& p) const
+    {
+        return ((this->folder == p.folder) && 
+                (this->budget_folder == p.budget_folder) && 
+                (this->budget_files == p.budget_files));
+    }
+    
+    bool program_data::operator!=(const program_data& p) const
+    {
+        return ((this->folder != p.folder) || 
+                (this->budget_folder != p.budget_folder) || 
+                (this->budget_files != p.budget_files));
+    }
+    
     
 }
 
