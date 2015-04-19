@@ -46,13 +46,9 @@ namespace common
     bool is_special(const char&);
     bool is_number(const char&);
     bool is_char(const char&);
-    key_code::key_code_data getch_funct();
-    char gkey();
-    key_code::key_code_data gkey_funct();
     bool get_user_str(std::string&);
     void wait();
     void cls();
-    void cl();
     void center(const std::string&);
     bool prompt_user(const std::string&);
     std::string peek_string(std::istream&, const unsigned int&);

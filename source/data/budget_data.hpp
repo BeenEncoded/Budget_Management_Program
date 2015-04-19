@@ -53,7 +53,6 @@ namespace data
         ID_T id;
     } money_alloc_data;
     
-    
     /**
      * @class budget_data
      * @author Jonathan Whitlock

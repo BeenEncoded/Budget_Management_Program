@@ -12,9 +12,9 @@
 #include "common/common.hpp"
 #include "common/global/program_data.hpp"
 #include "utility/filesystem.hpp"
-#include "iofunctions.hpp"
 #include "utility/time_class.hpp"
 #include "data/budget_data.hpp"
+#include "utility/user_input.hpp"
 
 namespace
 {
@@ -156,11 +156,6 @@ namespace common
         return ++count;
     }
     
-    void cl()
-    {
-        input::cl();
-    }
-    
     bool is_letter(const char& ch)
     {
         for(unsigned char x('a'), y('A'); ((x <= 'z') && (y <= 'Z')); ++x, ++y)
@@ -188,38 +183,6 @@ namespace common
         return (is_letter(ch) || is_number(ch) || is_special(ch));
     }
     
-    /**
-     * @brief gets a user's key press.  Does not clear the buffer.
-     * @return The key a user has pressed.
-     */
-    key_code::key_code_data getch_funct()
-    {
-        using key_code::key_code_data;
-        using key_code::is_listed_control;
-        using key_code::might_be_control;
-        
-        key_code_data key;
-        
-        key.is_control = true;
-        do
-        {
-            key.control_d.emplace_back(input::getch().control_d[0]);
-        }while(might_be_control(key) && input::kbhit());
-        key.is_control = (key.control_d.size() > 1);
-        return key;
-    }
-    
-    char gkey()
-    {
-        input::cl();
-        return input::getch().control_d[0];
-    }
-    
-    key_code::key_code_data gkey_funct()
-    {
-        input::cl();
-        return getch_funct();
-    }
     
     /**
      * @brief Provides a more complete user input: pressing "escape" cancels the
@@ -235,7 +198,7 @@ namespace common
         using ansi::display::clear_line;
         using ansi::cursor::save_pos;
         using ansi::cursor::restore_pos;
-        using key_code::key_code_data;
+        using keyboard::key_code_data;
         
         unsigned int cursor_pos(0); //position of cursor in "inp"
         bool finished(false), canceled(false);
@@ -243,7 +206,7 @@ namespace common
         
         inp.erase();
         display_ansi(save_pos());
-        input::cl();
+        user_input::cl();
         do
         {
             //update display and cursor:
@@ -258,11 +221,11 @@ namespace common
             }
             
             //get user key:
-            ch = common::getch_funct();
-            if(key_code::is_listed_control(ch))
+            ch = user_input::getch_funct();
+            if(keyboard::is_listed_control(ch))
             {
-                using namespace key_code::code;
-                using key_code::keys;
+                using namespace keyboard::code;
+                using keyboard::keys;
                 
                 if(ch == keys[backspace::value])
                 {
@@ -325,7 +288,7 @@ namespace common
         for(unsigned int x(0); x < 2; ++x) std::cout<< std::endl;
         std::cout<< "Press anything to continue...";
         std::cout.flush();
-        common::gkey();
+        user_input::gkey();
     }
     
     /**
@@ -373,7 +336,7 @@ namespace common
             center("Yes or no?");
             cout.flush();
             
-            ch = gkey();
+            ch = user_input::gkey();
             ch = std::tolower(ch);
             if(ch == 'y')
             {

@@ -6,6 +6,7 @@
 #include "main_menu.hpp"
 #include "utility/time_class.hpp"
 #include "common/global/global_defines.hpp"
+#include "utility/user_input.hpp"
 #include "common/common.hpp"
 #include "common/global/program_data.hpp"
 #include "data/budget_data.hpp"
@@ -72,7 +73,7 @@ namespace menu
     {
         using common::result_data;
         using global::program_data;
-        using key_code::key_code_data;
+        using keyboard::key_code_data;
         using std::cout;
         using std::endl;
         

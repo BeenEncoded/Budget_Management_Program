@@ -8,13 +8,14 @@
 #include "common/common.hpp"
 #include "tests/common_test_util.hpp"
 #include "utility/ansi.hpp"
+#include "utility/user_input.hpp"
 
 namespace
 {
-    std::string key_code_display(const key_code::key_code_data&);
+    std::string key_code_display(const keyboard::key_code_data&);
     
     
-    inline std::string key_code_display(const key_code::key_code_data& key)
+    inline std::string key_code_display(const keyboard::key_code_data& key)
     {
         std::string temps("{");
         
@@ -71,13 +72,13 @@ namespace test
         using std::cout;
         using std::endl;
         
-        key_code::key_code_data key;
+        keyboard::key_code_data key;
         
-        ::common::cl();
+        ::user_input::cl();
         do
         {
             ::common::cls();
-            key = ::common::getch_funct();
+            key = ::user_input::getch_funct();
             cout<< "Key = "<< key_code_display(key)<< endl;
             ::common::wait();
         }while(::common::prompt_user("Another?"));
