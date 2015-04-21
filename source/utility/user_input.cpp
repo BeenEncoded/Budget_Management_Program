@@ -35,8 +35,12 @@ namespace
 
 namespace keyboard
 {
-    std::vector<keyboard::key_code_data> keys(default_keys());
+    std::vector<keyboard::key_code_data> keys{default_keys()};
     
+    /**
+     * @brief The default key codes for XTerm
+     * @return a vector of XTerm key codes.
+     */
     std::vector<keyboard::key_code_data> default_keys()
     {
         return std::vector<keyboard::key_code_data>({
@@ -194,6 +198,15 @@ namespace user_input
     }
 
     template<typename type>
+    menu_option_data<type>::menu_option_data(menu_option_data<type>::funct_type& f, 
+            const std::string& s, const keyboard::key_code_data& k) : 
+                    exec(f),
+                    description(s),
+                    key(k)
+    {
+    }
+
+    template<typename type>
     menu_option_data<type>::menu_option_data(const menu_option_data<type>& m) : 
             exec(m.exec),
             description(m.description),
@@ -235,7 +248,7 @@ namespace user_input
         return *this;
     }
 
-
+    template struct menu_option_data<void>;
 }
 
 namespace user_input
@@ -261,18 +274,31 @@ namespace user_input
         return key;
     }
     
+    /**
+     * @brief Extracts a single character from the keyboard buffer.  Waits
+     * for user input.
+     * @return A character.
+     */
     char gkey()
     {
         cl();
         return getch().control_d[0];
     }
     
+    /**
+     * @brief Clears the buffer before extracting a key.  This forces
+     * a wait for user input.
+     * @return A key code.
+     */
     keyboard::key_code_data gkey_funct()
     {
         cl();
         return getch_funct();
     }
     
+    /**
+     * @return True if there are key codes in the buffer.
+     */
     bool kbhit()
     {
         int ch, oldf;
@@ -298,6 +324,9 @@ namespace user_input
         return button_hit;
     }
     
+    /**
+     * @brief Clears the buffer of any key codes.
+     */
     void cl()
     {
         int ch, oldf;
@@ -320,13 +349,33 @@ namespace user_input
         fcntl(STDIN_FILENO, F_SETFL, oldf);
     }
     
+    /**
+     * @brief Retrieves user input for a menu.
+     * @param options A list of keys with the respective options.
+     * @return The function to be called.
+     */
     template<typename type>
     typename menu_option_data<type>::funct_type get_input(std::vector<menu_option_data<type> >& options)
     {
         if(options.empty()) return nullptr;
-        //cur_pos
+        
+        bool finished(false);
+        keyboard::key_code_data key;
+        
+        user_input::cl();
+        do
+        {
+            key = std::move(user_input::getch_funct());
+            
+            for(typename std::vector<menu_option_data<type> >::iterator it(options.begin()); it != options.end(); ++it)
+            {
+                if(it->key == key) return it->exec;
+            }
+        }while(!finished);
         return nullptr;
     }
+    
+    template typename menu_option_data<void>::funct_type get_input<void>(std::vector<menu_option_data<void> >&);
     
     
 }

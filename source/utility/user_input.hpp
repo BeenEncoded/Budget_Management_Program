@@ -104,6 +104,7 @@ namespace user_input
         
         explicit menu_option_data();
         explicit menu_option_data(const funct_type&, const std::string&, const keyboard::key_code_data&);
+        explicit menu_option_data(funct_type&, const std::string&, const keyboard::key_code_data&);
         menu_option_data(const menu_option_data<type>&);
         menu_option_data(menu_option_data<type>&&) noexcept;
         
@@ -112,7 +113,7 @@ namespace user_input
         menu_option_data<type>& operator=(const menu_option_data<type>&);
         menu_option_data<type>& operator=(menu_option_data<type>&&) noexcept;
         
-        const funct_type exec;
+        funct_type exec;
         std::string description;
         keyboard::key_code_data key;
     };
