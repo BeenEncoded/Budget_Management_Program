@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <stdexcept>
 #include <exception>
+#include <utility>
 
 #include "scroll_display.hpp"
 
@@ -28,9 +29,61 @@ namespace
     
 }
 
+//scroll_display_class member functions:
 namespace scrollDisplay
 {
-    /* True/false based on whether it moved the window or not. */
+    scroll_display_class::scroll_display_class() : 
+            display(NULL),
+            wind(), 
+            pos()
+    {
+    }
+    
+    scroll_display_class::scroll_display_class(std::vector<std::string>& d) : 
+            display(&d),
+            wind(),
+            pos()
+    {
+    }
+    
+    scroll_display_class::scroll_display_class(const scroll_display_class& s) : 
+            display(s.display),
+            wind(s.wind),
+            pos(s.pos)
+    {
+    }
+    
+    scroll_display_class::scroll_display_class(scroll_display_class&& s) noexcept : 
+            display(std::move(s.display)),
+            wind(std::move(s.wind)),
+            pos(std::move(s.pos))
+    {
+    }
+    
+    scroll_display_class::~scroll_display_class()
+    {
+    }
+    
+    scroll_display_class& scroll_display_class::operator=(const scroll_display_class& s)
+    {
+        if(this != &s)
+        {
+            this->display = s.display;
+            this->wind = s.wind;
+            this->pos = s.pos;
+        }
+        return *this;
+    }
+    
+    scroll_display_class& scroll_display_class::operator=(scroll_display_class&& s) noexcept
+    {
+        this->display = std::move(s.display);
+        this->wind = std::move(s.wind);
+        this->pos = std::move(s.pos);
+        return *this;
+    }
+    
+    /** True/false based on whether it moved the window or not. */
     bool scroll_display_class::scroll_up()
     {
         this->sync();
@@ -46,7 +99,7 @@ namespace scrollDisplay
         return success;
     }
     
-    /* True/false based on whether it moved the window or not. */
+    /** True/false based on whether it moved the window or not. */
     bool scroll_display_class::scroll_down()
     {
         this->sync();
@@ -65,7 +118,7 @@ namespace scrollDisplay
         return success;
     }
     
-    /* True/false based on whether it moved the window or not. */
+    /** True/false based on whether it moved the window or not. */
     bool scroll_display_class::scroll_pg_down()
     {
         this->sync();
@@ -84,7 +137,7 @@ namespace scrollDisplay
         return success;
     }
     
-    /* True/false based on whether it moved the window or not. */
+    /** True/false based on whether it moved the window or not. */
     bool scroll_display_class::scroll_pg_up()
     {
         this->sync();
@@ -105,6 +158,8 @@ namespace scrollDisplay
         return success;
     }
     
+    /** Returns the "window" as a list of strings.  This can
+     * be displayed. */
     std::vector<std::string> scroll_display_class::window()
     {
         this->sync();
@@ -120,8 +175,8 @@ namespace scrollDisplay
         return tempv;
     }
     
-    /* Keeps the window within the bounds of the display, the
-     display the proper size, and the positions within bounds. */
+    /** Keeps the window within the bounds of the display, the
+     * display the proper size, and the positions within bounds. */
     void scroll_display_class::sync()
     {
         if(this->wind.size < 0) this->wind.size *= (-1);
@@ -249,15 +304,158 @@ namespace scrollDisplay
         return success;
     }
     
+    /** Returns the current position in the window.  part
+     * represents the position relative to the window, and
+     * whole represents the position relative to the entire
+     * display.*/
     const position_data& scroll_display_class::gpos()
     {
         this->sync();
         return this->pos;
     }
     
+    /** Returns the size of the scroll display.  can be 
+     * modified directly. */
+    long& scroll_display_class::window_size()
+    {
+        return this->wind.size;
+    }
+    
+    /** Returns the first position of the window, relative to the 
+     * entire display. */
+    const signed long& scroll_display_class::window_beg()
+    {
+        this->sync();
+        return this->wind.beg;
+    }
+    
+    /** Calculates the last possible index that can
+     * be safely referenced from the pointed vector, based on where the window
+     * is positioned.*/
+    signed long scroll_display_class::end_pos() const
+    {
+        assert(this->display != NULL);
+        signed long temp(this->wind.beg + (this->wind.size - 1));
+        if(!this->display->empty())
+        {
+            if(temp > 0)
+            {
+                if(unsigned(temp) >= this->display->size()) temp = (this->display->size() - 1);
+            }
+            else if(temp < this->wind.beg)
+            {
+                ethrow("Error:  signed long end_pos() const (end_pos < wind.begin)!!!");
+            }
+        }
+        else
+        {
+            temp = (-1);
+        }
+        return temp;
+    }
+    
+    /** Returns the (real) size of the window which has been "resized"
+     * to fit within the pointed vector.  Does not reflect
+     * the value of wind.size.  (this should be <= wind.size)*/
+    signed long scroll_display_class::current_wsize() const
+    {
+        return ((this->end_pos() - this->wind.beg) + 1);
+    }
+    
     
 }
 
+//position_data member functions:
+namespace scrollDisplay
+{
+    position_data::position_data() : 
+            part(0),
+            whole(0)
+    {
+    }
+    
+    position_data::position_data(const position_data& p) : 
+            part(p.part),
+            whole(p.whole)
+    {
+    }
+    
+    position_data::position_data(position_data&& p) noexcept : 
+            part(std::move(p.part)),
+            whole(std::move(p.whole))
+    {
+    }
+    
+    position_data::~position_data()
+    {
+    }
+    
+    position_data& position_data::operator=(const position_data& p)
+    {
+        if(this != &p)
+        {
+            this->part = p.part;
+            this->whole = p.whole;
+        }
+        return *this;
+    }
+    
+    position_data& position_data::operator=(position_data&& p) noexcept
+    {
+        this->part = std::move(p.part);
+        this->whole = std::move(p.whole);
+        return *this;
+    }
+    
+    
+}
+
+//window_data member functions:
+namespace scrollDisplay
+{
+    window_data::window_data() : 
+            size(15),
+            beg(0)
+    {
+    }
+    
+    window_data::window_data(const window_data& w) : 
+            size(w.size),
+            beg(w.beg)
+    {
+    }
+    
+    window_data::window_data(window_data&& w) noexcept : 
+            size(std::move(w.size)),
+            beg(std::move(w.beg))
+    {
+    }
+    
+    window_data::~window_data()
+    {
+    }
+    
+    window_data& window_data::operator=(const window_data& w)
+    {
+        if(this != &w)
+        {
+            this->size = w.size;
+            this->beg = w.beg;
+        }
+        return *this;
+    }
+    
+    window_data& window_data::operator=(window_data&& w) noexcept
+    {
+        this->size = std::move(w.size);
+        this->beg = std::move(w.beg);
+        return *this;
+    }
+    
+    
+}
+
+//window_data_class
 namespace scrollDisplay
 {
     template<class type>
@@ -281,6 +479,24 @@ namespace scrollDisplay
     }
     
     template<class type>
+    window_data_class<type>::window_data_class(const window_data_class<type>& w) : 
+            data(w.data),
+            update_display(w.update_display),
+            display(w.display),
+            window(w.window)
+    {
+    }
+    
+    template<class type>
+    window_data_class<type>::window_data_class(window_data_class<type>&& w) noexcept : 
+            data(std::move(w.data)),
+            update_display(std::move(w.update_display)),
+            display(std::move(w.display)),
+            window(std::move(w.window))
+    {
+    }
+    
+    template<class type>
     window_data_class<type>::~window_data_class()
     {
     }
@@ -296,6 +512,16 @@ namespace scrollDisplay
             this->window = w.window;
             this->display = w.display;
         }
+        return *this;
+    }
+    
+    template<class type>
+    window_data_class<type>& window_data_class<type>::operator=(window_data_class<type>&& w) noexcept
+    {
+        this->data = std::move(w.data);
+        this->update_display = std::move(w.update_display);
+        this->display = std::move(w.display);
+        this->window = std::move(w.window);
         return *this;
     }
     
@@ -346,6 +572,12 @@ namespace scrollDisplay
             ethrow("Can not update window_data_class with null data!");
         }
         this->update_display(*(this->data), this->display);
+    }
+    
+    template<class type>
+    const std::vector<type>* const window_data_class<type>::gdata() const
+    {
+        return this->data;
     }
     
     
