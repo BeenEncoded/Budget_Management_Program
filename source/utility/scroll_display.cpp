@@ -1,6 +1,7 @@
 #include <string>
 #include <sstream>
 #include <vector>
+#include <iostream>
 #include <assert.h>
 #include <stdexcept>
 #include <exception>
@@ -578,6 +579,96 @@ namespace scrollDisplay
     const std::vector<type>* const window_data_class<type>::gdata() const
     {
         return this->data;
+    }
+    
+    
+}
+
+namespace
+{
+}
+
+//misc functions
+namespace scrollDisplay
+{
+    /**
+     * @brief Displays a scroll window.  Does not append a new line.
+     * @param win The window to show
+     * @param bracket_char bracket characters to use for the selected element.
+     * @param spec_bracket_char bracket characters to use for multiple selected
+     * elements.
+     * @param spec_selected selected elements.
+     */
+    template<typename type>
+    void display_window(
+            const window_data_class<type>& win, 
+            const std::pair<char, char>& bracket_char, 
+            const std::pair<char, char>& spec_bracket_char, 
+            const std::unordered_set<unsigned int>& spec_selected)
+    {
+        using std::cout;
+        using std::endl;
+        
+        if(!win.gdata()->empty())
+        {
+            unsigned int e_before(win.win().window_beg()), 
+                    e_after((win.gdata()->size() - (win.win().window_beg() + win.win().window_size())));
+            std::vector<std::string> disp(std::move(win.win().window()));
+            bool is_selected(false), is_special_selected(false);
+            
+            if(win.win().gpos().whole >= win.win().window_size())
+            {
+                cout<< std::string(((70 / 2) - (std::to_string(e_before).size() / 2)), ' ')<< e_before<< endl;
+                cout<< std::string(70, '^')<< endl;
+            }
+            for(unsigned int x(0); x < disp.size(); ++x)
+            {
+                is_special_selected = (spec_selected.find((x + win.win().window_beg())) != spec_selected.end());
+                is_selected = (x == win.win().gpos().part);
+                cout<< (is_special_selected ? spec_bracket_char.first : ' ');
+                cout<< (is_selected ? bracket_char.first : ' ');
+                cout<< disp[x];
+                if(is_selected) cout<< bracket_char.second;
+                if(is_special_selected) cout<< spec_bracket_char.second;
+                
+                if(x < (disp.size() - 1)) cout<< endl;
+                else cout.flush();
+            }
+            //to create a constant sized boundry, write a number of newlines if the display isn't full:
+            for(unsigned int x(0); x < (win.win().window_size() - disp.size()); ++x)
+            {
+                cout<< endl;
+            }
+            if(e_after > 0)
+            {
+                cout<< std::string(70, 'V')<< endl;
+                cout<< std::string(((70 / 2) - (std::to_string(e_after).size() / 2)), ' ')<< e_after;
+            }
+            cout.flush();
+        }
+    }
+    
+    /**
+     * @brief Displays a scroll window.  Does not append a new line.
+     * @param win The window to show
+     * @param bracket_char bracket characters to use for the selected element.
+     */
+    template<typename type>
+    void display_window(
+            const window_data_class<type>& win,
+            const std::pair<char, char>& bracks)
+    {
+        display_window<type>(win, bracks, std::pair<char, char>('>', '<'), std::unordered_set<unsigned int>());
+    }
+    
+    /**
+     * @brief Displays a scroll window.  Does not append a new line.
+     * @param win The window to show
+     */
+    template<typename type>
+    void display_window(const window_data_class<type>& w)
+    {
+        display_window(w, std::pair<char, char>('[', ']'));
     }
     
     

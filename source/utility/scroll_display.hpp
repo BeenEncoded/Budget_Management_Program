@@ -3,12 +3,22 @@
 #include <vector>
 #include <string>
 #include <assert.h>
+#include <utility>
+#include <unordered_set>
 
 namespace scrollDisplay
 {
     typedef class scroll_display_class scroll_display_class;
     typedef struct window_data window_data;
     typedef struct position_data position_data;
+    template<class type> class window_data_class;
+    
+    template<typename type> void display_window(const window_data_class<type>&, 
+            const std::pair<char, char>&, const std::pair<char, char>&, 
+            const std::unordered_set<unsigned int>&);
+    template<typename type> void display_window(const window_data_class<type>&, 
+            const std::pair<char, char>&);
+    template<typename type> void display_window(const window_data_class<type>&);
     
     
     typedef struct window_data
@@ -113,6 +123,7 @@ namespace scrollDisplay
         scroll_display_class window;
         
     };
+    
     
 }
 
