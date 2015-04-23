@@ -1,4 +1,3 @@
-#include "build_defines.hpp"
 #if UNIT_TEST_PROG == true
 
 #ifndef TESTS_COMMON_TEST_UTIL_HPP_INCLUDED

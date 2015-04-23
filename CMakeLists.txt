@@ -35,7 +35,6 @@ set(PROGRAM_NAME budget_program)
 set(SOURCE_FOLDER ${CMAKE_CURRENT_SOURCE_DIR}/source)
 
 #compiler flag settings
-set(BUILD_RELEASE false) #default debug
 set(INCLUDE_ALL false) #if true, then it recursively includes all cpp and hpp files
 set(ENABLE_MULTITHREADING false)
 set(CPLUSPLUS_11 true)
@@ -49,6 +48,9 @@ set(64_BIT_BUILD true)
 set(USING_BOOST_LIBRARY true)
 set(BOOST_LIB_COMPONENTS system filesystem) #change these library filenames if necessary
 set(BOOST_LIB_COMPONENTS_LITERAL libboost_system.a libboost_filesystem.a)
+
+#unittest++
+set(USING_UNITTESTPP_LIBS true)
 
 #Additional Libraries
 set(USING_ADDITIONAL_LIBS false)
@@ -66,11 +68,11 @@ set(NCURSES_LIB_COMPONENTS_LITERAL libncurses.a)
 #CMAKE_CXX_FLAGS_DEBUG = debug
 #CMAKE_CXX_FLAGS_RELEASE = release
 #CMAKE_CXX_FLAGS = no flags
-if(BUILD_RELEASE) #this makes it easier to switch between release and debug
-    set(CMAKE_BUILD_TYPE Release)
-else()
-    set(CMAKE_BUILD_TYPE Debug)
-endif()
+#if(BUILD_RELEASE) #this makes it easier to switch between release and debug
+#    set(CMAKE_BUILD_TYPE Release)
+#else()
+#    set(CMAKE_BUILD_TYPE Debug)
+#endif()
 
 set(BUILD_SHARED_LIBS OFF)
 
@@ -79,91 +81,106 @@ set(BUILD_SHARED_LIBS OFF)
 # =================================================================================================
 # =================================================================================================
 
+macro(target_add_definitions targ defs)
+    get_target_property(TARGET_PROPS ${targ} COMPILE_FLAGS)
+    if(TARGET_PROPS)
+        set_target_properties(${targ} PROPERTIES COMPILE_FLAGS "${TARGET_PROPS} ${defs}")
+    else()
+        set_target_properties(${targ} PROPERTIES COMPILE_FLAGS "${defs}")
+    endif()
+endmacro(target_add_definitions)
+
+macro(target_add_preproc_defs targ defs)
+    get_target_property(TARGET_PROPS ${targ} COMPILE_DEFINITIONS)
+    if(TARGET_PROPS)
+        set_target_properties(${targ} PROPERTIES COMPILE_DEFINITIONS "${TARGET_PROPS};${defs}")
+    else()
+        set_target_properties(${targ} PROPERTIES COMPILE_DEFINITIONS "${defs}")
+    endif()
+endmacro(target_add_preproc_defs)
 
 #sets c++11
-macro(use_cplusplus11)
-    add_definitions(-std=c++11)
+macro(use_cplusplus11 targ)
+    target_add_definitions(${targ} "-std=c++11")
 endmacro(use_cplusplus11)
 
 #sets c99
-macro(use_c99)
-    add_definitions(-std=c99)
+macro(use_c99 targ)
+    target_add_definitions(${targ} "-std=c99")
 endmacro(use_c99)
 
 #sets c11
-macro(use_c11)
-    add_definitions(-std=c11)
+macro(use_c11 targ)
+    target_add_definitions(${targ} "-std=c11")
 endmacro(use_c11)
 
 #sets strict
-macro(set_strict)
-    add_definitions(-Wall -pedantic -Wextra)
+macro(set_strict targ)
+    target_add_definitions(${targ} "-Wall -pedantic -Wextra")
 endmacro(set_strict)
 
 #sets static
-macro(set_static)
-    add_definitions(-static)
+macro(set_static targ)
+    target_add_definitions(${targ} "-static")
 endmacro(set_static)
 
-macro(link_mthread)
+macro(link_mthread targ)
     if(CPLUSPLUS_11)
         if(ENABLE_MULTITHREADING)
-            target_link_libraries(${PROGRAM_NAME} pthread)
+            target_link_libraries(${targ} pthread)
         endif()
     endif()
 endmacro(link_mthread)
 
 #adds optimization flags
-macro(add_build_optimizations)
-    if(BUILD_RELEASE)
-        add_definitions(-O -O3)
+macro(add_build_optimizations targ)
+    if("${targ}" STREQUAL "release")
+        target_add_definitions(${targ} "-O -O3")
     endif()
 endmacro(add_build_optimizations)
 
 #adds boost library
-macro(add_boost)
+macro(add_boost targ)
     set(Boost_USE_STATIC_LIBS ON)
     set(Boost_USE_MULTITHREADED ON)
     set(Boost_USE_STATIC_RUNTIME ON)
     find_package(Boost REQUIRED COMPONENTS ${BOOST_LIB_COMPONENTS})
     if(Boost_FOUND)
-        include_directories(${Boost_INCLUDE_DIRS})
+        target_include_directories(${targ} PRIVATE ${Boost_INCLUDE_DIRS})
         link_directories(${Boost_LIBRARY_DIRS})
-        target_link_libraries(${PROGRAM_NAME} ${BOOST_LIB_COMPONENTS_LITERAL})
+        target_link_libraries(${targ} ${BOOST_LIB_COMPONENTS_LITERAL})
     else()
         message("FATAL ERROR: boost library not found!")
     endif()
 endmacro(add_boost)
 
 #adds additional libraries
-macro(add_additional_libs)
-    if(USING_ADDITIONAL_LIBS)
-        foreach(tempf ${ADDITIONAL_LIB_COMPONENTS_LITERAL})
-            message("Searching for library " ${tempf})
-            find_library(LIBUNIT_TEST_PP_LOCATION add_unittestpp NAMES ${tempf})
-            if(NOT LIBUNIT_TEST_PP_LOCATION)
-                message("FATAL ERROR: Could not find " ${tempf} "!")
-            else()
-                message("Found library " ${tempf})
-                target_link_libraries(${PROGRAM_NAME} ${LIBUNIT_TEST_PP_LOCATION})
-            endif()
-        endforeach()
-    endif()
+macro(add_additional_libs targ libs)
+    foreach(tempf ${libs})
+        message("Searching for library " ${tempf})
+        find_library(LIBUNIT_TEST_PP_LOCATION add_unittestpp NAMES ${tempf})
+        if(NOT LIBUNIT_TEST_PP_LOCATION)
+            message("FATAL ERROR: Could not find " ${tempf} "!")
+        else()
+            message("Found library " ${tempf})
+            target_link_libraries(${targ} ${LIBUNIT_TEST_PP_LOCATION})
+        endif()
+    endforeach()
 endmacro(add_additional_libs)
 
 #adds ncurses library
-macro(add_ncurses)
+macro(add_ncurses targ)
     set(CURSES_NEED_NCURSES TRUE)
     find_package(Curses 5.9 REQUIRED COMPONENTS ${NCURSES_LIB_COMPONENTS})
     if(CURSES_FOUND)
-        include_directories(${CURSES_INCLUDE_DIR})
-        target_link_libraries(${PROGRAM_NAME} ${NCURSES_LIB_COMPONENTS})
+        target_include_directories(${targ} PRIVATE ${CURSES_INCLUDE_DIR})
+        target_link_libraries(${targ} ${NCURSES_LIB_COMPONENTS})
     else()
         message("FATAL ERROR: curses library not found!")
     endif()
 endmacro(add_ncurses)
 
-macro(find_dependent_includes)
+macro(find_dependent_includes targ)
 
     if(INCLUDE_ALL)
         file(GLOB_RECURSE project_HEADERS "${SOURCE_FOLDER}/*.hpp")
@@ -176,65 +193,89 @@ macro(find_dependent_includes)
         list(REMOVE_DUPLICATES project_INCLUDE_DIRS)
         
         foreach(_include_directory_path ${project_INCLUDE_DIRS})
-            include_directories(${_include_directory_path})
+            target_include_directories(${targ} PRIVATE ${_include_directory_path})
         endforeach(_include_directory_path)
     else()
-        include_directories(${SOURCE_FOLDER})
+        target_include_directories(${targ} PRIVATE ${SOURCE_FOLDER})
     endif()
 
 endmacro(find_dependent_includes)
 
 #adds executable and source files
-macro(add_files)
-    find_dependent_includes()
+macro(add_files targ)
     file(GLOB_RECURSE CPP_SOURCE RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "${SOURCE_FOLDER}/*.cpp" "${SOURCE_FOLDER}/*.hpp")
-    add_executable(${PROGRAM_NAME} ${CPP_SOURCE})
+    add_executable(${targ} ${CPP_SOURCE})
+    set_property(TARGET ${targ} PROPERTY FOLDER ${CMAKE_CURRENT_SOURCE_DIR}/bin/${targ})
+    find_dependent_includes(${targ})
     file(GLOB_RECURSE CPP "${SOURCE_FOLDER}/*.cpp" "${SOURCE_FOLDER}/*.hpp")
     link_directories(${CPP})
 endmacro(add_files)
 
+#adds flags
+macro(add_comp_flags targ)
+    if(STRICT_COMPILE)
+        set_strict(${targ})
+    endif()
+
+    if("${targ}" STREQUAL "debug")
+        target_add_definitions(${targ} "-g")
+    elseif("${targ}" STREQUAL "testing")
+        target_add_definitions(${targ} "-g")
+    endif()
+
+    if("${targ}" STREQUAL "release")
+        add_build_optimizations(${targ})
+    endif()
+
+    if(STATIC_COMPILE)
+        set_static(${targ})
+    endif()
+
+    if(CPLUSPLUS_11)
+        use_cplusplus11(${targ})
+    endif()
+
+    if(64_BIT_BUILD)
+        target_add_definitions(${targ} "-m64")
+    else()
+        target_add_definitions(${targ} "-m32")
+    endif()
+endmacro(add_comp_flags)
+
+#creates an executable target with the current configuration.
+#Each target has it's different compiler args, and library stuffs.
+macro(create_target_build targ)
+    add_files(${targ})
+    add_comp_flags(${targ})
+    
+    if("${targ}" STREQUAL "testing")
+        target_add_preproc_defs(${targ} "UNIT_TEST_PROG=true")
+        if(USING_UNITTESTPP_LIBS)
+            add_additional_libs(${targ} libUnitTest++.a)
+        endif()
+    endif()
+
+    if(USING_ADDITIONAL_LIBS)
+        add_additional_libs(${targ} ${ADDITIONAL_LIB_COMPONENTS_LITERAL})
+    endif()
+
+    link_mthread(${targ})
+
+    if(USING_NCURSES_LIBRARY)
+        add_ncurses(${targ})
+    endif()
+
+    if(USING_BOOST_LIBRARY)
+        add_boost(${targ})
+    endif()
+endmacro(create_target_build)
+
+#this is where we start configuration:
 cmake_minimum_required(VERSION 2.8)
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_modules" ${CMAKE_MODULE_PATH})
 project(${PROGRAM_NAME})
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-if(STRICT_COMPILE)
-    set_strict()
-endif()
-
-if(NOT BUILD_RELEASE)
-    add_definitions(-g)
-endif()
-
-if(OPTIMIZE_BUILD_FLAGS)
-    add_build_optimizations()
-endif()
-
-if(STATIC_COMPILE)
-    set_static()
-endif()
-
-if(CPLUSPLUS_11)
-    use_cplusplus11()
-endif()
-
-if(64_BIT_BUILD)
-    add_definitions(-m64)
-else()
-    add_definitions(-m32)
-endif()
-
-add_files()
-
-if(USING_ADDITIONAL_LIBS)
-    add_additional_libs()
-endif()
-
-link_mthread()
-
-if(USING_NCURSES_LIBRARY)
-    add_ncurses()
-endif()
-
-if(USING_BOOST_LIBRARY)
-    add_boost()
-endif()
+create_target_build(release)
+create_target_build(debug)
+create_target_build(testing)

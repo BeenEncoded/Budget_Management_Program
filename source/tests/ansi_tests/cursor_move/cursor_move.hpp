@@ -1,4 +1,3 @@
-#include "build_defines.hpp"
 #if UNIT_TEST_PROG == true
 
 #ifndef CURSOR_MOVE_HPP_INCLUDED

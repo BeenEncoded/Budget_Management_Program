@@ -1,4 +1,3 @@
-#include "build_defines.hpp"
 #if UNIT_TEST_PROG == true
 
 #ifndef ANSI_CURSOR_MOVE_TESTS_HPP_INCLUDED

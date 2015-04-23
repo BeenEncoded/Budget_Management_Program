@@ -1,4 +1,3 @@
-#include "build_defines.hpp"
 #if UNIT_TEST_PROG == true
 
 #ifndef UNIT_TESTS_HPP_INCLUDED
@@ -12,7 +11,7 @@
 
 #include "ansi_tests/tests_included.hpp"
 #include "monetary_allocation_tests/tests_included.hpp"
-#include "common_functions/tests.hpp"
+//#include "common_functions/tests.hpp"
 
 namespace
 {
