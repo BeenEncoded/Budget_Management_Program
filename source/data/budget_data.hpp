@@ -77,6 +77,7 @@ namespace data
         money_t total_money;
         std::vector<money_alloc_data> allocs;
         tdata::time_class timestamp;
+        //todo add id to budgets
     } budget_data;
     
     money_alloc_data::ID_T new_alloc_id(const std::vector<money_alloc_data>&);

@@ -4,7 +4,8 @@
 #include <unordered_set>
 #include <utility>
 
-#include "common/common.hpp"
+//#include "common/common.hpp"
+#include "utility/stream_operations.hpp"
 #include "budget_data.hpp"
 #include "common/global/global_defines.hpp"
 #include "utility/time_class.hpp"
@@ -84,7 +85,7 @@ namespace data
     
     std::ostream& operator<<(std::ostream& out, const money_alloc_data& m)
     {
-        using common::out_mem;
+        using utility::out_mem;
         
         if(out.good())
         {
@@ -97,8 +98,8 @@ namespace data
     
     std::istream& operator>>(std::istream& in, money_alloc_data& m)
     {
-        using common::safe_getline;
-        using common::in_mem;
+        using utility::safe_getline;
+        using utility::in_mem;
         
         m = money_alloc_data();
         if(in.good())
@@ -121,12 +122,12 @@ namespace data
     
     std::ostream& operator<<(std::ostream& out, const std::vector<money_alloc_data>& v)
     {
-        return common::write_vector(out, v);
+        return utility::write_vector(out, v);
     }
     
     std::istream& operator>>(std::istream& in, std::vector<money_alloc_data>& v)
     {
-        return common::read_vector(in, v);
+        return utility::read_vector(in, v);
     }
     
     
@@ -202,7 +203,7 @@ namespace data
     
     std::ostream& operator<<(std::ostream& out, const budget_data& b)
     {
-        using common::out_mem;
+        using utility::out_mem;
         
         if(out.good())
         {
@@ -222,7 +223,7 @@ namespace data
     std::istream& operator>>(std::istream& in, budget_data& b)
     {
         using std::ios_base;
-        using common::in_mem;
+        using utility::in_mem;
         
         b = budget_data();
         in.peek();
@@ -237,12 +238,12 @@ namespace data
     
     std::ostream& operator<<(std::ostream& out, const std::vector<budget_data>& v)
     {
-        return common::write_vector(out, v);
+        return utility::write_vector(out, v);
     }
     
     std::istream& operator>>(std::istream& in, std::vector<budget_data>& v)
     {
-        return common::read_vector(in, v);
+        return utility::read_vector(in, v);
     }
     
     

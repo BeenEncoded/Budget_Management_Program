@@ -7,6 +7,7 @@
 #include "main_menu.hpp"
 #include "utility/time_class.hpp"
 #include "utility/user_input.hpp"
+#include "utility/stream_operations.hpp"
 #include "common/common.hpp"
 #include "common/global/program_data.hpp"
 #include "data/budget_data.hpp"
@@ -40,7 +41,7 @@ data::money_t> > basic_info(const std::string&): ";
             std::ifstream in(s.c_str(), std::ios::in);
             if(in.good())
             {
-                common::in_mem(in, result.data.second);
+                utility::in_mem(in, result.data.second);
                 in.peek();
                 if(in.good()) in>> result.data.first;
                 if(!in.fail()) result.success = true;

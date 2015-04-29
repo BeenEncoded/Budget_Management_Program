@@ -13,12 +13,14 @@ namespace scrollDisplay
     typedef struct position_data position_data;
     template<class type> class window_data_class;
     
-    template<typename type> void display_window(const window_data_class<type>&, 
-            const std::pair<char, char>&, const std::pair<char, char>&, 
+    template<typename type> void display_window(
+            window_data_class<type>&, 
+            const std::pair<char, char>&, 
+            const std::pair<char, char>&, 
             const std::unordered_set<unsigned int>&);
-    template<typename type> void display_window(const window_data_class<type>&, 
-            const std::pair<char, char>&);
-    template<typename type> void display_window(const window_data_class<type>&);
+    
+    template<typename type> void display_window(window_data_class<type>&, const std::pair<char, char>&);
+    template<typename type> void display_window(window_data_class<type>&);
     
     
     typedef struct window_data
@@ -69,6 +71,7 @@ namespace scrollDisplay
         bool mv_down();
         bool pg_up();
         bool pg_down();
+        bool jmp(const unsigned int&);
         
         std::vector<std::string> window();
         const position_data& gpos();
