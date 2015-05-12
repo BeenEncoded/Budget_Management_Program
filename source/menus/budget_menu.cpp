@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <utility>
+#include <fstream>
 
 #include "budget_menu.hpp"
 #include "utility/scroll_display.hpp"
@@ -16,48 +17,54 @@
 
 namespace
 {
-    std::pair<tdata::time_class, data::money_t> load_basic_info(const std::string&);
+    data::budget_data load_basic_info(const std::string&);
     void create_display(const std::vector<std::string>&, std::vector<std::string>&);
     bool usr_delete_file(const std::string&);
     void display_error(const std::string&);
-    bool call_budget_mod(const std::string&);
+    bool call_mod_budget(const std::string&);
+    bool call_create_budget(global::program_data&);
+    std::vector<data::budget_data> load_basic_info_all(global::program_data&);
     
     
-    
-    inline std::pair<tdata::time_class, data::money_t> load_basic_info(const std::string& path)
+    /**
+     * @brief Loads basic info of finite size.  Used for memory efficiency.
+     * @return a budget data.
+     */
+    inline data::budget_data load_basic_info(const std::string& path)
     {
         using fsys::is_file;
         using fsys::is_symlink;
+        using utility::in_mem;
         
-        std::pair<tdata::time_class, data::money_t> tempdat;
+        data::budget_data tempbud;
         
         if(is_file(path).value && !is_symlink(path).value)
         {
-            data::budget_data tempbud;
-            if(common::load_from_file(path, tempbud))
-            {
-                tempdat.first = std::move(tempbud.timestamp);
-                tempdat.second = std::move(tempbud.total_money);
-            }
-            tempbud.allocs.erase(tempbud.allocs.begin(), tempbud.allocs.end());
-            tempbud.allocs.shrink_to_fit();
+            std::ifstream in(path.c_str(), std::ios::in);
+            if(in.good()) in_mem(in, tempbud.total_money);
+            if(in.good()) in_mem(in, tempbud.id);
+            if(in.good()) in>> tempbud.timestamp;
+            in.close();
         }
-        return tempdat;
+        return tempbud;
     }
     
+    /**
+     * @brief Used to created a display vector for a window_data_class.
+     */
     inline void create_display(const std::vector<std::string>& paths, std::vector<std::string>& display)
     {
         display.erase(display.begin(), display.end());
         
-        std::pair<tdata::time_class, data::money_t> tempdat;
+        data::budget_data tempbud;
         
         for(unsigned int x(0); x < paths.size(); ++x)
         {
-            tempdat = std::move(load_basic_info(paths[x]));
-            display.emplace_back((common::date_disp(tempdat.first) + "  ($" + 
-                    std::to_string(tempdat.second / 100) + "."));
-            if((tempdat.second % 100) < 10) display.back() += "0";
-            display.back() += std::to_string((tempdat.second % 100));
+            tempbud = std::move(load_basic_info(paths[x]));
+            display.emplace_back((common::date_disp(tempbud.timestamp) + "  ($" + 
+                    std::to_string(tempbud.total_money / 100) + "."));
+            if((tempbud.total_money % 100) < 10) display.back() += "0";
+            display.back() += std::to_string((tempbud.total_money % 100));
             display.back() += ")";
         }
     }
@@ -102,16 +109,17 @@ namespace
      * This essentially seperates the loading/saving code from the menus.  Menus
      * should not save or load any data.
      * @param path the path chosen.
-     * @return true if no errors occured.
+     * @return true if the budget was modified.
      */
     inline bool call_mod_budget(const std::string& path)
     {
         bool success(true);
         data::budget_data tempbud;
+        
         if(common::load_from_file(path, tempbud))
         {
-            common::result_data<bool> tempres(menu::modify_budget(tempbud));
-            if(tempres.success && !tempres.data)
+            std::pair<bool, bool> tempres(menu::modify_budget(tempbud));
+            if(tempres.first && !tempres.second)
             {
                 if(!common::save_to_file(path, tempbud))
                 {
@@ -119,7 +127,7 @@ namespace
                     display_error("Could not save budget!");
                 }
             }
-            else if(!tempres.success) success = false;
+            else if(!tempres.first) success = false;
         }
         else
         {
@@ -127,6 +135,28 @@ namespace
             display_error("Could not load file \"" + path + "\"!");
         }
         return success;
+    }
+    
+    inline std::vector<data::budget_data> load_basic_info_all(global::program_data& pdata)
+    {
+        pdata.budget_files = std::move(global::budget_paths(pdata.budget_folder));
+        if(pdata.budget_files.empty()) return std::vector<data::budget_data>();
+        
+        std::vector<data::budget_data> tempv;
+        
+        for(std::vector<std::string>::const_iterator it{pdata.budget_files.begin()}; it != pdata.budget_files.end(); ++it)
+        {
+            tempv.push_back(std::move(load_basic_info(*it)));
+        }
+        return tempv;
+    }
+    
+    inline bool call_create_budget(global::program_data& pdata)
+    {
+        data::budget_data tempb;
+        tempb.id = std::move(data::new_budget_id(load_basic_info_all(pdata)));
+        tempb.timestamp = tdata::current_time();
+        //cur_pos
     }
     
     
@@ -177,7 +207,7 @@ namespace menu
                     else if(key == keys[del::value])
                     {
                         if(common::prompt_user("Are you sure you want to delete the \
-budget for " + common::date_disp(load_basic_info(scroll_window.selected()).first) + "?  This \
+budget for " + common::date_disp(load_basic_info(scroll_window.selected()).timestamp) + "?  This \
 is permanent!"))
                         {
                             if(usr_delete_file(scroll_window.selected()))
@@ -201,7 +231,7 @@ is permanent!"))
                             
                             case 'a':
                             {
-                                //cur_pos
+                                //todo
                             }
                             break;
                             
@@ -223,19 +253,11 @@ is permanent!"))
         return graceful_run;
     }
     
-    common::result_data<bool> modify_budget(data::budget_data& b)
+    std::pair<bool, bool> modify_budget(data::budget_data& b)
     {
-        /* result's defined boolean represents whether the user
-         * canceled modification. */
-        common::result_data<bool> result;
-        
-        result.message = "ERROR IN common::result_data<bool> modify_budget(dat\
-a::budget_data&): ";
-        result.data = false;
-        
-        //todo (this function returns success until I get to work on it
-        result.success = true;
-        result.message.erase();
+        /* the result is two bools: first = whether is was modified
+         * second = whether the modification was canceled by the user. */
+        std::pair<bool, bool> result{false, false};
         
         return result;
     }

@@ -16,51 +16,9 @@
 
 namespace
 {
-    common::result_data<std::pair<tdata::time_class, data::money_t> > basic_info(const std::string&);
     std::vector<user_input::menu_option_data<void> > main_menu_options();
     
     
-    
-    
-    /**
-     * @brief Loads basic information about a budget, given its path.
-     * @return a std::pair<tdata::time_class, data::money_t>
-     */
-    inline common::result_data<std::pair<tdata::time_class, data::money_t> > basic_info(const std::string& s)
-    {
-        using fsys::is_file;
-        using fsys::is_symlink;
-        
-        common::result_data<std::pair<tdata::time_class, data::money_t> > result;
-        
-        result.message = "ERROR IN common::result_data<std::pair<tdata::time_class, \
-data::money_t> > basic_info(const std::string&): ";
-        
-        if(is_file(s).value && !is_symlink(s).value)
-        {
-            std::ifstream in(s.c_str(), std::ios::in);
-            if(in.good())
-            {
-                utility::in_mem(in, result.data.second);
-                in.peek();
-                if(in.good()) in>> result.data.first;
-                if(!in.fail()) result.success = true;
-                else result.message += "Stream read failure.";
-            }
-            else
-            {
-                result.message += "Stream could not be opened!";
-            }
-            if(in.is_open()) in.close();
-        }
-        else
-        {
-            result.message += ("\"" + s + "\" is not a valid path!  Unable to \
-load basic data.");
-        }
-        if(result.success) result.message.erase();
-        return result;
-    }
     
     inline std::vector<user_input::menu_option_data<void> > main_menu_options()
     {

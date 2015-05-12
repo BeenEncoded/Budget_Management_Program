@@ -62,6 +62,8 @@ namespace data
      */
     typedef struct budget_data
     {
+        typedef unsigned long long ID_T;
+        
         budget_data(const budget_data&) noexcept;
         budget_data(budget_data&&) noexcept;
         explicit budget_data() noexcept;
@@ -77,10 +79,11 @@ namespace data
         money_t total_money;
         std::vector<money_alloc_data> allocs;
         tdata::time_class timestamp;
-        //todo add id to budgets
+        ID_T id;
     } budget_data;
     
     money_alloc_data::ID_T new_alloc_id(const std::vector<money_alloc_data>&);
+    budget_data::ID_T new_budget_id(const std::vector<budget_data>&);
     
     
 }

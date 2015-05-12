@@ -205,15 +205,15 @@ namespace tdata
     
     bool time_class::operator!=(const time_class& t) const
     {
-        return ((this->cur_time.tm_sec != t.cur_time.tm_sec) && 
-                    (this->cur_time.tm_min != t.cur_time.tm_min) && 
-                    (this->cur_time.tm_hour != t.cur_time.tm_hour) && 
-                    (this->cur_time.tm_mday != t.cur_time.tm_mday) && 
-                    (this->cur_time.tm_wday != t.cur_time.tm_wday) && 
-                    (this->cur_time.tm_yday != t.cur_time.tm_yday) && 
-                    (this->cur_time.tm_mon != t.cur_time.tm_mon) && 
-                    (this->cur_time.tm_year != t.cur_time.tm_year) && 
-                    (std::strcmp(this->cur_time.tm_zone, t.cur_time.tm_zone) != 0) && 
+        return ((this->cur_time.tm_sec != t.cur_time.tm_sec) || 
+                    (this->cur_time.tm_min != t.cur_time.tm_min) || 
+                    (this->cur_time.tm_hour != t.cur_time.tm_hour) || 
+                    (this->cur_time.tm_mday != t.cur_time.tm_mday) || 
+                    (this->cur_time.tm_wday != t.cur_time.tm_wday) || 
+                    (this->cur_time.tm_yday != t.cur_time.tm_yday) || 
+                    (this->cur_time.tm_mon != t.cur_time.tm_mon) || 
+                    (this->cur_time.tm_year != t.cur_time.tm_year) || 
+                    (std::strcmp(this->cur_time.tm_zone, t.cur_time.tm_zone) != 0) || 
                     (this->cur_time.tm_isdst != t.cur_time.tm_isdst));
     }
     
@@ -285,10 +285,10 @@ namespace tdata
         
         time_class tempt(*this);
         
-        if(i >= (signed)day::value)
+        if(i >= (signed)day)
         {
-            for(int x = 0; x < (i / (signed)day::value); x++) tempt.add_day();
-            i %= day::value;
+            for(int x = 0; x < (i / (signed)day); x++) tempt.add_day();
+            i %= day;
         }
         
         if(i < 0) for(int x = 0; x < (i * (-1)); x++) --tempt;
@@ -332,10 +332,10 @@ namespace tdata
         
         time_class tempt(*this);
         
-        if(i >= (signed)day::value)
+        if(i >= (signed)day)
         {
-            for(int x = 0; x < (i / (signed)day::value); x++) tempt.subtract_day();
-            i %= day::value;
+            for(int x = 0; x < (i / (signed)day); x++) tempt.subtract_day();
+            i %= day;
         }
         
         if(i < 0) for(int x = 0; x < (i * (-1)); x++) ++tempt;
@@ -402,18 +402,18 @@ namespace tdata
         if(__isleap((this->cur_time.tm_year + 1900)) && (tempyday == 365))
         {
             tempyday--;
-            (*this) = this->operator-(day::value);
+            (*this) = this->operator-(day);
         }
         if(target < this->cur_time.tm_year)
         {
-            while(target < this->cur_time.tm_year) (*this) = this->operator-(day::value);
+            while(target < this->cur_time.tm_year) (*this) = this->operator-(day);
         }
         else if(target > this->cur_time.tm_year)
         {
-            while(target > this->cur_time.tm_year) (*this) = this->operator+(day::value);
+            while(target > this->cur_time.tm_year) (*this) = this->operator+(day);
         }
-        while(this->cur_time.tm_yday != 0) (*this) = this->operator-(day::value);
-        while(this->cur_time.tm_yday != tempyday) (*this) = this->operator+(day::value);
+        while(this->cur_time.tm_yday != 0) (*this) = this->operator-(day);
+        while(this->cur_time.tm_yday != tempyday) (*this) = this->operator+(day);
     }
     
     /* Syncs the month and month day to the day of the year.  This allows
@@ -529,9 +529,9 @@ namespace tdata
             {
                 mday %= days_in_month(((t.month() + 1) % 12), t.gyear());
             }
-            if(t.mday() == 1) t += day::value;
-            while(t.mday() != 1) t += day::value;
-            while(t.mday() != mday) t += day::value;
+            if(t.mday() == 1) t += day;
+            while(t.mday() != 1) t += day;
+            while(t.mday() != mday) t += day;
         };
         
         auto subtract_month = [](time_class& t)->void
@@ -545,9 +545,9 @@ namespace tdata
             {
                 mday %= days_in_month(((t.month() + 11) % 12), t.gyear());
             }
-            while(t.mday() != 1) t -= day::value;
-            t -= day::value;
-            while(t.mday() != mday) t -= day::value;
+            while(t.mday() != 1) t -= day;
+            t -= day;
+            while(t.mday() != mday) t -= day;
         };
         if(tempi < 0)
         {

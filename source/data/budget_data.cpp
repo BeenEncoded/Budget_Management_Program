@@ -139,28 +139,32 @@ namespace data
     budget_data::budget_data(const budget_data& b) noexcept :
             total_money(b.total_money),
             allocs(b.allocs),
-            timestamp(b.timestamp)
+            timestamp(b.timestamp),
+            id(b.id)
     {
     }
     
     budget_data::budget_data(budget_data&& b) noexcept : 
             total_money(std::move(b.total_money)),
             allocs(std::move(b.allocs)),
-            timestamp(std::move(b.timestamp))
+            timestamp(std::move(b.timestamp)),
+            id(std::move(b.id))
     {
     }
     
     budget_data::budget_data(const money_t& m) noexcept : 
             total_money(m),
             allocs(),
-            timestamp(tdata::current_time())
+            timestamp(tdata::current_time()),
+            id(0)
     {
     }
     
     budget_data::budget_data() noexcept :
             total_money(0),
             allocs(),
-            timestamp(tdata::current_time())
+            timestamp(tdata::current_time()),
+            id(0)
     {
     }
     
@@ -175,6 +179,7 @@ namespace data
             this->total_money = b.total_money;
             this->allocs = b.allocs;
             this->timestamp = b.timestamp;
+            this->id = b.id;
         }
         return *this;
     }
@@ -184,6 +189,7 @@ namespace data
         this->allocs = std::move(b.allocs);
         this->timestamp = std::move(b.timestamp);
         this->total_money = std::move(b.total_money);
+        this->id = std::move(b.id);
         return *this;
     }
     
@@ -191,14 +197,16 @@ namespace data
     {
         return ((this->total_money == b.total_money) && 
                 (this->allocs == b.allocs) && 
-                (this->timestamp == b.timestamp));
+                (this->timestamp == b.timestamp) && 
+                (this->id == b.id));
     }
     
     bool budget_data::operator!=(const budget_data& b) const noexcept
     {
         return ((this->allocs != b.allocs) || 
                 (this->total_money != b.total_money) || 
-                (this->timestamp != b.timestamp));
+                (this->timestamp != b.timestamp) ||
+                (this->id != b.id));
     }
     
     std::ostream& operator<<(std::ostream& out, const budget_data& b)
@@ -208,6 +216,7 @@ namespace data
         if(out.good())
         {
             out_mem<money_t>(out, b.total_money);
+            out_mem<budget_data::ID_T>(out, b.id);
             if(out.good()) out<< b.timestamp;
             if(out.good()) out<< b.allocs;
         }
@@ -230,6 +239,7 @@ namespace data
         if(in.good())
         {
             if(in.good()) in_mem<money_t>(in, b.total_money);
+            if(in.good()) in_mem<budget_data::ID_T>(in, b.id);
             if(in.good()) in>> b.timestamp;
             in>> b.allocs;
         }
@@ -257,15 +267,24 @@ namespace data
         
         if(allocs.empty()) return 1;
         
-        money_alloc_data::ID_T id(1);
+        money_alloc_data::ID_T id(0);
         std::unordered_set<money_alloc_data::ID_T> ids;
         
-        for(std::vector<money_alloc_data>::const_iterator it(allocs.begin()); it != allocs.end(); ++it)
-        {
-            ids.emplace(it->id);
-        }
-        while(ids.find(id) != ids.end()) ++id;
+        for(std::vector<money_alloc_data>::const_iterator it(allocs.begin()); it != allocs.end(); ++it) ids.insert(it->id);
+        while(ids.find(++id) != ids.end());
         return id;
+    }
+    
+    budget_data::ID_T new_budget_id(const std::vector<budget_data>& budgets)
+    {
+        if(budgets.empty()) return 1;
+        
+        budget_data::ID_T new_id{0};
+        std::unordered_set<budget_data::ID_T> ids;
+        
+        for(std::vector<budget_data>::const_iterator it{budgets.begin()}; it != budgets.end(); ++it) ids.insert(it->id);
+        while(ids.find(++new_id) != ids.end());
+        return new_id;
     }
     
     
