@@ -56,6 +56,8 @@ namespace common
     std::istream::pos_type inavail(std::istream&);
     std::string time_disp(const tdata::time_class&);
     std::string date_disp(const tdata::time_class&);
+    std::string fit_str(const std::string&, const unsigned int&);
+    bool str_is_num(const std::string&);
     template<typename type1, typename type2> void distribute_equally(const type1&, std::vector<type2>&, void (*access)(type2&, type1*&));
     template<typename type> bool load_from_file(const std::string&, type&);
     template<typename type> bool save_to_file(const std::string&, const type&);

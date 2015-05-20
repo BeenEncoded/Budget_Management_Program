@@ -247,10 +247,10 @@ namespace common
         return (is_letter(ch) || is_number(ch) || is_special(ch));
     }
     
-    
     /**
      * @brief Provides a more complete user input: pressing "escape" cancels the
-     * input, and support for other features can be easily added.
+     * input, and support for other features can be easily added.  Provides
+     * the same functionality as getline.
      * @param inp the string to store input in.
      * @return A bool: true if the user didn't cancel.
      */
@@ -337,7 +337,12 @@ namespace common
                 }
                 else
                 {
-                    if(ch.control_d[0] == '\n') finished = true;
+                    if(ch.control_d[0] == '\n')
+                    {
+                        display_ansi(restore_pos());
+                        display_ansi(clear_line(0));
+                        finished = true;
+                    }
                 }
             }
         }while(!finished);
@@ -469,6 +474,52 @@ namespace common
     {
         return (t.month_name() + " " + std::to_string(t.mday()) + ", " + 
                 std::to_string(t.gyear()));
+    }
+    
+    /**
+     * @brief Limits a string's maximum size to 'size'.  This is mainly 
+     * intended for menu displays.
+     * @return a string that has a size <= 'size'.  Appends "..."
+     * if the string was resized for context.
+     */
+    std::string fit_str(const std::string& s, const unsigned int& size)
+    {
+        std::string temps{s};
+        if(temps.size() > size)
+        {
+            temps.resize(temps.size() - 3);
+            temps += "...";
+        }
+        return temps;
+    }
+    
+    /**
+     * @brief Returns true if 's' represents any type of number (float, int, etc...).
+     * This function does allow for all types (signed and floating point).
+     * @param s the string to test
+     * @return true if 's' is a number. 
+     */
+    bool str_is_num(const std::string& s)
+    {
+        if(s.empty()) return false;
+        if(!common::is_number(s.back())) return false;
+        if(s.find('.') != std::string::npos)
+        {
+            //if there is more than one decimal:
+            if(s.find('.') != s.rfind('.')) return false;
+        }
+        if(s.find('-') != std::string::npos)
+        {
+            //if there is more than one negative sign:
+            if(s.find('-') != s.rfind('-')) return false;
+        }
+        
+        for(std::string::const_iterator iter{s.begin()}; iter != s.end(); ++iter)
+        {
+            if(((*iter) == '.') || ((*iter) == '-')) continue;
+            if(!common::is_number(*iter)) return false;
+        }
+        return true;
     }
     
     

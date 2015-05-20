@@ -8,6 +8,7 @@
 #include <utility>
 
 #include "scroll_display.hpp"
+#include "data/budget_data.hpp"
 
 #ifndef ethrow
 #define ethrow(MSG) throw std::runtime_error(std::string(std::string(__FILE__) + \
@@ -602,6 +603,7 @@ namespace scrollDisplay
     
     
     template class window_data_class<std::string>;
+    template class window_data_class<data::money_alloc_data>;
 }
 
 namespace
@@ -701,6 +703,13 @@ namespace scrollDisplay
             const std::pair<char, char>&,
             const std::pair<char, char>&,
             const std::unordered_set<unsigned int>&);
+            
+    template void display_window<data::money_alloc_data>(
+            window_data_class<data::money_alloc_data>&,
+            const std::pair<char, char>&,
+            const std::pair<char, char>&,
+            const std::unordered_set<unsigned int>&);
+    
     
     /**
      * @brief Displays a scroll window.  Does not append a new line.
@@ -717,6 +726,7 @@ namespace scrollDisplay
     
     template void display_window(window_data_class<std::string>&,
             const std::pair<char, char>&);
+    template void display_window<data::money_alloc_data>(window_data_class<data::money_alloc_data>&, const std::pair<char, char>&);
     
     /**
      * @brief Displays a scroll window.  Does not append a new line.
@@ -729,6 +739,7 @@ namespace scrollDisplay
     }
     
     template void display_window<std::string>(window_data_class<std::string>&);
+    template void display_window<data::money_alloc_data>(window_data_class<data::money_alloc_data>&);
     
     
 }
