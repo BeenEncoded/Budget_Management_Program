@@ -142,7 +142,7 @@ namespace common
         t = type();
         if(is_symlink(path).value || !is_file(path).value) return false;
         
-        std::ifstream in(path, std::ios::in);
+        std::ifstream in(path, std::ios::binary);
         bool success(true);
         
         in.peek();
@@ -181,10 +181,11 @@ namespace common
             }
         }
         
-        std::ofstream out(path, std::ios::out);
+        std::ofstream out(path, std::ios::binary);
         if(out.good()) out<< t;
+        bool success = !out.fail();
         if(out.is_open()) out.close();
-        return !out.fail();
+        return success;
     }
     
     template bool save_to_file<data::budget_data>(const std::string&, const data::budget_data&);

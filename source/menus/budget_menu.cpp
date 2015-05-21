@@ -170,6 +170,8 @@ namespace
         bool budget_created{false};
         
         tempb.id = std::move(data::new_budget_id(load_basic_info_all(pdata)));
+        //todo user should pick month before creation, and it can not be the same as a budget that already exists
+        //todo user should also set total money of budget as well
         tempb.timestamp = tdata::current_time();
         temp_result = std::move(menu::modify_budget(tempb));
         if(temp_result.first && !temp_result.second) //modified, but not canceled
@@ -194,7 +196,10 @@ namespace
     {
         std::string temps{"$"};
         temps += std::to_string(((long double)money / 100));
-        if((money % 10) == 0) temps += '0';
+        if(temps.find('.') != std::string::npos)
+        {
+            if((temps.size() - temps.find('.')) > 2) temps.resize((temps.find('.') + 3));
+        }
         return temps;
     }
     
@@ -229,6 +234,7 @@ namespace
      */
     inline bool user_get_money_value(data::money_t& m)
     {
+        //todo add ability to recognize and parse simple equations
         std::string temps;
         bool modified{false}, is_valid{false};
         
@@ -239,9 +245,11 @@ namespace
         }while(modified && !is_valid);
         if(modified && is_valid)
         {
+            long double tempstore{0};
             std::stringstream ss;
             ss<< temps;
-            ss>> m;
+            ss>> tempstore;
+            m = (tempstore * 100);
         }
         return (modified && is_valid);
     }
@@ -275,6 +283,7 @@ namespace menu
             cout<< endl;
             common::center("Budgets: ");
             for(unsigned int x(0); x < 3; ++x) cout<< endl;
+            //todo each element in the list of budgets should display month, not whole date
             display_window(scroll_window);
             cout<< endl<< endl;
             cout<< "\'a\' -  Add new budget"<< endl;
@@ -313,12 +322,14 @@ is permanent!"))
                             case '\n':
                             {
                                 call_mod_budget(scroll_window.selected());
+                                pdat.budget_files = std::move(global::budget_paths(pdat.budget_folder));
                             }
                             break;
                             
                             case 'a':
                             {
                                 call_create_budget(pdat);
+                                pdat.budget_files = std::move(global::budget_paths(pdat.budget_folder));
                             }
                             break;
                             
@@ -337,6 +348,7 @@ is permanent!"))
                 }
             }
         }while(!finished);
+        common::cls();
         return true; //there has yet to be a case where this function fails.
     }
     
@@ -362,14 +374,17 @@ is permanent!"))
         key_code_data key;
         
         do
-        { //todo add ability to modify month for budget
+        {
+            //todo add ability to modify month for budget
+            //todo add ability to modify the money allocated for a budget
             common::cls();
             cout<< "Today is "<< common::date_disp(tdata::time_class{tdata::current_time()})<< endl;
             cout<< endl;
             common::center("Budget for " + b.timestamp.month_name() + ", " + std::to_string(b.timestamp.gyear()));
-            for(unsigned int x{0}; x < 4; ++x) cout<< endl;
+            for(unsigned int x{0}; x < 3; ++x) cout<< endl;
             scrollDisplay::display_window(scroll_display);
             cout<< endl<< endl;
+            //todo display total money allocated
             cout<< " a -  Add new allocation"<< endl;
             cout<< " [DEL] -  Delete selected"<< endl;
             cout<< " [ENTER] -  Modify selected"<< endl;

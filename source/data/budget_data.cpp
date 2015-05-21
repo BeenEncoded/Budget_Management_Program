@@ -241,7 +241,7 @@ namespace data
             if(in.good()) in_mem<money_t>(in, b.total_money);
             if(in.good()) in_mem<budget_data::ID_T>(in, b.id);
             if(in.good()) in>> b.timestamp;
-            in>> b.allocs;
+            if(in.good()) in>> b.allocs;
         }
         return in;
     }

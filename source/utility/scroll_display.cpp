@@ -666,6 +666,7 @@ namespace scrollDisplay
                 cout<< std::string(((win_width / 2) - (std::to_string(e_before).size() / 2)), ' ')<< e_before<< endl;
                 cout<< std::string(win_width, '^')<< endl;
             }
+            else cout<< std::string(70, '-')<< endl;
             for(unsigned int x(0); x < disp.size(); ++x)
             {
                 is_special_selected = (spec_selected.find((x + scroll_window->window_beg())) != spec_selected.end());
@@ -689,11 +690,12 @@ namespace scrollDisplay
             {
                 cout<< endl;
             }
-            if(e_after > 0)
+            if((e_after > 0) && (win.gdata()->size() > (unsigned)(scroll_window->window_beg() + scroll_window->window_size())))
             {
                 cout<< std::string(70, 'V')<< endl;
                 cout<< std::string(((70 / 2) - (std::to_string(e_after).size() / 2)), ' ')<< e_after;
             }
+            else cout<< std::string(70, '-');
             cout.flush();
         }
     }
