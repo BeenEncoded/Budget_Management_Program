@@ -83,6 +83,7 @@ namespace
         
         long num{((n < 0) ? (n * (-1)) : n)};
         bool subtract{(n < 0)};
+        
         switch(sel)
         {
             case 0:
@@ -644,7 +645,7 @@ namespace common
      * @return True if the user didn't cancel.  If the user cancels, the date
      * remains unchanged.
      */
-    bool user_choose_date(tdata::time_class& t) //test
+    bool user_choose_date(tdata::time_class& t)
     {
         using keyboard::key_code_data;
         using std::cout;
@@ -660,6 +661,8 @@ namespace common
         {
             cls();
             for(unsigned int x{0}; x < v_center::value; ++x) cout<< endl;
+            cout<< temp_time.wday_name()<< " "<< temp_time.month_name()<< " "<< 
+                    temp_time.mday()<< ", "<< temp_time.gyear()<< endl<< endl;
             common::center(date_selection_display(temp_time, selected, std::pair<char, char>{'>', '<'}));
             cout<< endl;
             for(unsigned int x{0}; x < 5; ++x) cout<< endl;
@@ -676,6 +679,8 @@ namespace common
                 
                 if(key == keys[up::value]) date_selection_add(temp_time, selected, 1);
                 else if(key == keys[down::value]) date_selection_add(temp_time, selected, -1);
+                else if(key == keys[pgup::value]) date_selection_add(temp_time, selected, 10);
+                else if(key == keys[pgdown::value]) date_selection_add(temp_time, selected, -10);
                 else if((key == keys[left::value]) && (selected > 0)) selected = ((selected + 2) % 3);
                 else if((key == keys[right::value]) && (selected < 2)) selected = ((selected + 1) % 3);
                 else if(key == keys[escape::value])
@@ -683,7 +688,6 @@ namespace common
                     cancel = true;
                     finished = true;
                 }
-                //todo add page-scrolling (+/- 10 units)
             }
             else if(!key.control_d.empty())
             {

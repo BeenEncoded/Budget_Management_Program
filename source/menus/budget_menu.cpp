@@ -67,7 +67,6 @@ namespace
         for(unsigned int x(0); x < paths.size(); ++x)
         {
             tempbud = std::move(load_basic_info(paths[x]));
-            //todo only display month and year for budgets
             display.push_back(std::move((common::date_disp(tempbud.timestamp) + "   (" + 
                     money_display(tempbud.total_money) + ")")));
         }
@@ -173,7 +172,7 @@ namespace
         do
         {
             canceled = !common::user_choose_date(b.timestamp);
-            date_valid = true;
+            date_valid = !canceled;
             for(std::vector<data::budget_data>::const_iterator it{buds.begin()}; ((it != buds.end()) && date_valid); ++it)
             {
                 if((b.timestamp.gyear() == it->timestamp.gyear()) && (b.timestamp.month() == it->timestamp.month()))
@@ -203,7 +202,6 @@ namespace
         bool budget_created{false};
         
         tempb.id = std::move(data::new_budget_id(load_basic_info_all(pdata)));
-        //todo user should also set total money of budget as well
         tempb.timestamp = tdata::current_time();
         if(!choose_budget_date(pdata, tempb)) return budget_created;
         temp_result = std::move(menu::modify_budget(tempb));
@@ -312,15 +310,19 @@ namespace menu
         pdat.budget_files = std::move(global::budget_paths(pdat.budget_folder));
         do
         {
+            /*todo add analysis option where the user can run an analysis on a budget
+             * that shows how much money is allocated, and how much is left */
+             
+            //todo add sorting by date
             common::cls();
             cout<< endl;
             common::center("Budgets: ");
             for(unsigned int x(0); x < 3; ++x) cout<< endl;
-            //todo each element in the list of budgets should display month, not whole date
             display_window(scroll_window);
             cout<< endl<< endl;
             cout<< "\'a\' -  Add new budget"<< endl;
-            cout<< "\'q\' -  Quit"<< endl;
+            cout<< "\'q\' -  Quit";
+            cout.flush();
             
             key = std::move(user_input::gkey_funct());
             {
@@ -406,10 +408,11 @@ is permanent!"))
         window_data_class<data::money_alloc_data> scroll_display{b.allocs, money_alloc_list_display};
         key_code_data key;
         
+        user_input::cl();
+        scroll_display.win().window_size() = 8;
         do
         {
-            //todo add ability to modify month for budget
-            //todo add ability to modify the money allocated for a budget
+            //todo add allocation distribution algorithms: by percent, equally, and add priority distribution with both.
             common::cls();
             cout<< "Today is "<< common::date_disp(tdata::time_class{tdata::current_time()})<< endl;
             cout<< endl;
@@ -417,7 +420,9 @@ is permanent!"))
             for(unsigned int x{0}; x < 3; ++x) cout<< endl;
             scrollDisplay::display_window(scroll_display);
             cout<< endl<< endl;
-            //todo display total money allocated
+            cout<< "Total money in this budget: "<< money_display(b.total_money)<< endl;
+            cout<< endl;
+            cout<< " m -  Modify total money to the budget"<< endl;
             cout<< " a -  Add new allocation"<< endl;
             cout<< " [DEL] -  Delete selected"<< endl;
             cout<< " [ENTER] -  Modify selected"<< endl;
@@ -493,6 +498,16 @@ is permanent!"))
                         }
                         break;
                         
+                        case 'm':
+                        {
+                            common::cls();
+                            for(unsigned int x{0}; x < v_center::value; ++x) cout<< endl;
+                            cout<< "Enter the total money you have for this budget: $";
+                            cout.flush();
+                            if(user_get_money_value(b.total_money)) result.first = true;
+                        }
+                        break;
+                        
                         default:
                         {
                         }
@@ -523,6 +538,7 @@ is permanent!"))
         
         do
         {
+            //todo display money available in budget based on total_money - total_money_allocated
             common::cls();
             cout<< endl;
             common::center("Modify Budget Allocation");
