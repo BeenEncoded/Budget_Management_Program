@@ -675,8 +675,8 @@ namespace scrollDisplay
                 cout<< (is_special_selected ? spec_bracket_char.first : ' ');
                 cout<< (is_selected ? bracket_char.first : ' ');
                 
-                disp[x] = limit_length(disp[x], (win_width - 2));
-                if(disp[x].size() < (win_width - 2)) disp[x] += std::string((win_width - disp[x].size()), ' ');
+                disp[x] = limit_length(disp[x], (win_width - 4));
+                if(disp[x].size() < (win_width - 4)) disp[x] += std::string(((win_width - 4) - disp[x].size()), ' ');
                 cout<< disp[x];
                 
                 cout<< (is_selected ? bracket_char.second : ' ');

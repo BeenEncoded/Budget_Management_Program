@@ -20,6 +20,13 @@
 namespace
 {
     std::string parent_path(const std::string&);
+    std::string date_selection_display(
+            const tdata::time_class&,
+            const unsigned short&,
+            const std::pair<char, char>&);
+    
+    void date_selection_add(tdata::time_class&, const unsigned short&, const long&);
+    
     
     
     inline std::string parent_path(const std::string& s)
@@ -33,6 +40,114 @@ namespace
         }
         else temps.erase();
         return temps;
+    }
+    
+    /**
+     * @brief Creates a string that represents a date, but adds brackets
+     * around a specified selection.
+     * @param sel
+     * 0 = month
+     * 1 = day
+     * 2 = year
+     * @return " month  [day]  year "
+     */
+    inline std::string date_selection_display(
+            const tdata::time_class& t,
+            const unsigned short& sel,
+            const std::pair<char, char>& brack)
+    {
+        std::string temps;
+        std::pair<char, char> brackets[3]{
+            ((0 == sel) ? brack : std::pair<char, char>{' ', ' '}),
+            ((1 == sel) ? brack : std::pair<char, char>{' ', ' '}),
+            ((2 == sel) ? brack : std::pair<char, char>{' ', ' '})
+        };
+        
+        temps = (brackets[0].first + t.month_name() + brackets[0].second);
+        temps += (brackets[1].first + std::to_string(t.mday()) + brackets[1].second);
+        temps += (brackets[2].first + std::to_string(t.gyear()) + brackets[2].second);
+        return temps;
+    }
+    
+    /**
+     * @brief Adds 'num' units to the selected date unit.
+     * @param sel Selected:
+     * 0 month
+     * 1 day
+     * 2 year
+     * @param num number to increment (or decrement) by.
+     */
+    inline void date_selection_add(tdata::time_class& t, const unsigned short& sel, const long& n)
+    {
+        if(n == 0) return;
+        
+        long num{((n < 0) ? (n * (-1)) : n)};
+        bool subtract{(n < 0)};
+        switch(sel)
+        {
+            case 0:
+            {
+                if(!subtract)
+                {
+                    int temp_month;
+                    for(long x{0}; x < num; ++x)
+                    {
+                        temp_month = t.month();
+                        for(unsigned int y{0}; ((y < 33) && (temp_month == t.month())); ++y)
+                        {
+                            t += tdata::t_const::day;
+                        }
+                    }
+                }
+                else
+                {
+                    int temp_month;
+                    for(long x{0}; x < num; ++x)
+                    {
+                        temp_month = t.month();
+                        for(unsigned int y{0}; ((y < 33) && (temp_month == t.month())); ++y)
+                        {
+                            t -= tdata::t_const::day;
+                        }
+                    }
+                }
+            }
+            break;
+            
+            case 1:
+            {
+                if(!subtract)
+                {
+                    for(long x{0}; x < num; ++x) t += tdata::t_const::day;
+                }
+                else
+                {
+                    for(long x{0}; x < num; ++x) t -= tdata::t_const::day;
+                }
+            }
+            break;
+            
+            case 2:
+            {
+                if(!subtract)
+                {
+                    for(long x{0}; x < num; ++x) t.syear((t.gyear() + 1));
+                }
+                else
+                {
+                    for(long x{0}; x < num; ++x) t.syear((t.gyear() - 1));
+                }
+            }
+            break;
+            
+            default:
+            {
+                ethrow(std::string("Error in \"") + "inline void date_selection\
+_add(tdata::time_class& t, const unsigned short& sel, const long& num): \
+Selection invalid!");
+            }
+            break;
+        }
     }
     
     
@@ -521,6 +636,81 @@ namespace common
             if(!common::is_number(*iter)) return false;
         }
         return true;
+    }
+    
+    /**
+     * @brief Allows the user to modify a date.
+     * @param t Date to modify
+     * @return True if the user didn't cancel.  If the user cancels, the date
+     * remains unchanged.
+     */
+    bool user_choose_date(tdata::time_class& t) //test
+    {
+        using keyboard::key_code_data;
+        using std::cout;
+        using std::endl;
+        
+        key_code_data key;
+        bool finished{false}, cancel{false};
+        tdata::time_class temp_time{t};
+        unsigned short selected{1};
+        
+        user_input::cl();
+        do
+        {
+            cls();
+            for(unsigned int x{0}; x < v_center::value; ++x) cout<< endl;
+            common::center(date_selection_display(temp_time, selected, std::pair<char, char>{'>', '<'}));
+            cout<< endl;
+            for(unsigned int x{0}; x < 5; ++x) cout<< endl;
+            cout<< "\'ESC\' -  Cancel"<< endl;
+            cout<< "\'\\\' -  Set to today";
+            cout.flush();
+            
+            key = std::move(user_input::getch_funct());
+            
+            if(keyboard::is_listed_control(key))
+            {
+                using namespace keyboard::code;
+                using keyboard::keys;
+                
+                if(key == keys[up::value]) date_selection_add(temp_time, selected, 1);
+                else if(key == keys[down::value]) date_selection_add(temp_time, selected, -1);
+                else if((key == keys[left::value]) && (selected > 0)) selected = ((selected + 2) % 3);
+                else if((key == keys[right::value]) && (selected < 2)) selected = ((selected + 1) % 3);
+                else if(key == keys[escape::value])
+                {
+                    cancel = true;
+                    finished = true;
+                }
+                //todo add page-scrolling (+/- 10 units)
+            }
+            else if(!key.control_d.empty())
+            {
+                switch(std::tolower((char)key.control_d[0]))
+                {
+                    case '\n':
+                    {
+                        finished = true;
+                    }
+                    break;
+                    
+                    case '\\':
+                    {
+                        temp_time = tdata::current_time();
+                    }
+                    break;
+                    
+                    default:
+                    {
+                    }
+                    break;
+                }
+            }
+        }
+        while(!finished);
+        if(!cancel) t = std::move(temp_time);
+        return !cancel;
     }
     
     

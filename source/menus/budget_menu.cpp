@@ -28,6 +28,7 @@ namespace
     std::string allocation_display(const data::money_alloc_data&);
     std::string money_display(const data::money_t&);
     bool user_get_money_value(data::money_t&);
+    bool choose_budget_date(global::program_data&, data::budget_data&);
     
     
     /**
@@ -66,6 +67,7 @@ namespace
         for(unsigned int x(0); x < paths.size(); ++x)
         {
             tempbud = std::move(load_basic_info(paths[x]));
+            //todo only display month and year for budgets
             display.push_back(std::move((common::date_disp(tempbud.timestamp) + "   (" + 
                     money_display(tempbud.total_money) + ")")));
         }
@@ -159,6 +161,37 @@ namespace
     }
     
     /**
+     * @brief Allows the user to choose a date.
+     * @param b budget to choose month/year for.
+     * @return true if the user chose a valid date.
+     */
+    inline bool choose_budget_date(global::program_data& pdat, data::budget_data& b)
+    {
+        std::vector<data::budget_data> buds{load_basic_info_all(pdat)};
+        bool date_valid{false}, canceled{false};
+        
+        do
+        {
+            canceled = !common::user_choose_date(b.timestamp);
+            date_valid = true;
+            for(std::vector<data::budget_data>::const_iterator it{buds.begin()}; ((it != buds.end()) && date_valid); ++it)
+            {
+                if((b.timestamp.gyear() == it->timestamp.gyear()) && (b.timestamp.month() == it->timestamp.month()))
+                {
+                    date_valid = false;
+                    common::cls();
+                    for(unsigned int x{0}; x < v_center::value; ++x) std::cout<< std::endl;
+                    common::center("You can not create a budget for the same month as another budget!");
+                    std::cout.flush();
+                    common::wait();
+                    common::cls();
+                }
+            }
+        }while(!date_valid && !canceled);
+        return (date_valid && !canceled);
+    }
+    
+    /**
      * @brief This function handles creation of a new budget, as well as saving it
      * if the user modified it.
      * @return true if a new budget was created.
@@ -170,9 +203,9 @@ namespace
         bool budget_created{false};
         
         tempb.id = std::move(data::new_budget_id(load_basic_info_all(pdata)));
-        //todo user should pick month before creation, and it can not be the same as a budget that already exists
         //todo user should also set total money of budget as well
         tempb.timestamp = tdata::current_time();
+        if(!choose_budget_date(pdata, tempb)) return budget_created;
         temp_result = std::move(menu::modify_budget(tempb));
         if(temp_result.first && !temp_result.second) //modified, but not canceled
         {
