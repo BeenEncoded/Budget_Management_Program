@@ -276,7 +276,7 @@ namespace
         }while(modified && !is_valid);
         if(modified && is_valid)
         {
-            long double tempstore{0};
+            long double tempstore;
             std::stringstream ss;
             ss<< temps;
             ss>> tempstore;

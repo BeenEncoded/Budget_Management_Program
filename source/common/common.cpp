@@ -15,7 +15,6 @@
 #include "utility/time_class.hpp"
 #include "data/budget_data.hpp"
 #include "utility/user_input.hpp"
-#include "utility/time_class.hpp"
 
 namespace
 {
@@ -653,7 +652,7 @@ namespace common
         
         key_code_data key;
         bool finished{false}, cancel{false};
-        tdata::time_class temp_time{t};
+        tdata::time_class temp_time(t);
         unsigned short selected{1};
         
         user_input::cl();
