@@ -175,7 +175,8 @@ namespace
             date_valid = !canceled;
             for(std::vector<data::budget_data>::const_iterator it{buds.begin()}; ((it != buds.end()) && date_valid); ++it)
             {
-                if((b.timestamp.gyear() == it->timestamp.gyear()) && (b.timestamp.month() == it->timestamp.month()))
+                if((b.timestamp.gyear() == it->timestamp.gyear()) && 
+                        (b.timestamp.month() == it->timestamp.month()) && (it->timestamp.mday() == b.timestamp.mday()))
                 {
                     date_valid = false;
                     common::cls();
@@ -337,13 +338,16 @@ namespace menu
                     else if(key == keys[end::value]) scroll_window.win().jmp((scroll_window.gdata()->size() - 1));
                     else if(key == keys[del::value])
                     {
-                        if(common::prompt_user("Are you sure you want to delete the \
-budget for " + common::date_disp(load_basic_info(scroll_window.selected()).timestamp) + "?  This \
-is permanent!"))
+                        if(!pdat.budget_files.empty())
                         {
-                            if(usr_delete_file(scroll_window.selected()))
+                            if(common::prompt_user("Are you sure you want to delete the \
+    budget for " + common::date_disp(load_basic_info(scroll_window.selected()).timestamp) + "?  This \
+    is permanent!"))
                             {
-                                scroll_window.remove_selected();
+                                if(usr_delete_file(scroll_window.selected()))
+                                {
+                                    scroll_window.remove_selected();
+                                }
                             }
                         }
                     }
@@ -356,8 +360,11 @@ is permanent!"))
                         {
                             case '\n':
                             {
-                                call_mod_budget(scroll_window.selected());
-                                pdat.budget_files = std::move(global::budget_paths(pdat.budget_folder));
+                                if(!pdat.budget_files.empty())
+                                {
+                                    call_mod_budget(scroll_window.selected());
+                                    pdat.budget_files = std::move(global::budget_paths(pdat.budget_folder));
+                                }
                             }
                             break;
                             

@@ -2,3 +2,5 @@
 
 -  add priority to money_alloc_data <--------
 -  Menus to modify budget_data
+-  Add ability to specify the length of time a budget spans (x number of days/months) and
+    allow the user to pick the "currently active" budget
