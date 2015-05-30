@@ -1,6 +1,13 @@
 //todo
 
--  add priority to money_alloc_data <--------
--  Menus to modify budget_data
--  Add ability to specify the length of time a budget spans (x number of days/months) and
-    allow the user to pick the "currently active" budget
+Get the alpha ready for github release:
+    -  add readme
+        *  make sure to mention all dependencies (operating system, libraries, build system deps, C++11, C11, CMake versions, Boost versions, etc...)
+        *  summarize program's purpose/features
+        *  summarize program's design
+
+Finish Coding main features:
+    -  add priority to money_alloc_data <--------
+    -  Menus to modify budget_data
+    -  Add ability to specify the length of time a budget spans (x number of days/months) and
+        allow the user to pick the "currently active" budget
