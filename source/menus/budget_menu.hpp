@@ -10,7 +10,7 @@ namespace menu
 {
     bool budget_list_menu(global::program_data&);
     std::pair<bool, bool> modify_budget(data::budget_data&);
-    std::pair<bool, bool> modify_allocation(data::money_alloc_data&);
+    std::pair<bool, bool> modify_allocation(data::budget_data&, data::money_alloc_data&);
     
 }
 

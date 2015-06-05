@@ -15,6 +15,117 @@
 #include "utility/filesystem.hpp"
 #include "utility/stream_operations.hpp"
 
+
+/* budget_statistics_data: */
+namespace
+{
+    typedef struct budget_statistics_data budget_statistics_data;
+    
+    
+    /**
+     * @struct budget_statistics_data
+     * @author Jonathan Whitlock 
+     * @date 06/04/2015
+     * @file budget_menu.cpp
+     * @brief Just trivializes statistics for a budget.  Use it or don't.  Doesn't matter.
+     */
+    typedef struct budget_statistics_data
+    {
+        explicit budget_statistics_data();
+        explicit budget_statistics_data(const data::budget_data&);
+        budget_statistics_data(const budget_statistics_data&);
+        budget_statistics_data(budget_statistics_data&&) noexcept;
+        
+        ~budget_statistics_data();
+        
+        budget_statistics_data& operator=(const budget_statistics_data&);
+        budget_statistics_data& operator=(budget_statistics_data&&) noexcept;
+        bool operator==(const budget_statistics_data&) const;
+        bool operator!=(const budget_statistics_data&) const;
+        
+        const data::budget_data *budget;
+        data::money_t money_allocated, money_unallocated;
+    } budget_statistics_data;
+    
+    
+    budget_statistics_data::budget_statistics_data() : 
+            budget{nullptr},
+            money_allocated{0},
+            money_unallocated{0}
+    {
+    }
+    
+    budget_statistics_data::budget_statistics_data(const data::budget_data& b) : 
+            budget{&b},
+            money_allocated{0},
+            money_unallocated{0}
+    {
+        for(std::vector<data::money_alloc_data>::const_iterator it{b.allocs.begin()}; it != b.allocs.end(); ++it)
+        {
+            this->money_allocated += it->value;
+        }
+        this->money_unallocated = (this->budget->total_money - this->money_allocated);
+    }
+    
+    budget_statistics_data::budget_statistics_data(const budget_statistics_data& s) : 
+            budget{s.budget},
+            money_allocated{s.money_allocated},
+            money_unallocated{s.money_unallocated}
+    {
+    }
+    
+    budget_statistics_data::budget_statistics_data(budget_statistics_data&& s) noexcept : 
+            budget{std::move(s.budget)},
+            money_allocated{std::move(s.money_allocated)},
+            money_unallocated{std::move(s.money_unallocated)}
+    {
+    }
+    
+    budget_statistics_data::~budget_statistics_data()
+    {
+        this->budget = nullptr;
+    }
+    
+    budget_statistics_data& budget_statistics_data::operator=(const budget_statistics_data& s)
+    {
+        if(this != &s)
+        {
+            this->budget = s.budget;
+            this->money_allocated = s.money_allocated;
+            this->money_unallocated = s.money_unallocated;
+        }
+        return *this;
+    }
+    
+    budget_statistics_data& budget_statistics_data::operator=(budget_statistics_data&& s) noexcept
+    {
+        if(this != &s)
+        {
+            this->budget = std::move(s.budget);
+            this->money_allocated = std::move(s.money_allocated);
+            this->money_unallocated = std::move(s.money_unallocated);
+        }
+        return *this;
+    }
+    
+    bool budget_statistics_data::operator==(const budget_statistics_data& s) const
+    {
+        return (((*(this->budget)) == (*(s.budget))) && 
+                    (this->money_allocated == s.money_allocated) && 
+                    (this->money_unallocated == s.money_unallocated));
+    }
+    
+    bool budget_statistics_data::operator!=(const budget_statistics_data& s) const
+    {
+        return (((*(this->budget)) != (*(s.budget))) || 
+                    (this->money_allocated != s.money_allocated) || 
+                    (this->money_unallocated != s.money_unallocated));
+    }
+    
+    
+}
+
+/* Local functions: */
 namespace
 {
     data::budget_data load_basic_info(const std::string&);
@@ -29,6 +140,8 @@ namespace
     std::string money_display(const data::money_t&);
     bool user_get_money_value(data::money_t&);
     bool choose_budget_date(global::program_data&, data::budget_data&);
+    std::string budget_statistic_display(const data::budget_data&);
+    budget_statistics_data apply_allocation(data::budget_data&, const data::money_alloc_data&);
     
     
     /**
@@ -45,7 +158,7 @@ namespace
         
         if(is_file(path).value && !is_symlink(path).value)
         {
-            std::ifstream in(path.c_str(), std::ios::in);
+            std::ifstream in{path.c_str(), std::ios::in};
             if(in.good()) in_mem(in, tempbud.total_money);
             if(in.good()) in_mem(in, tempbud.id);
             if(in.good()) in>> tempbud.timestamp;
@@ -110,7 +223,7 @@ namespace
      * @brief Calls modify_budget, but also handles the loading
      * and saving of the budget, as well as displaying any errors that occur.
      * This essentially seperates the loading/saving code from the menus.  Menus
-     * should not save or load any data.
+    budget_statistic_display * should not save or load any data.
      * @param path the path chosen.
      * @return true if the budget was modified.
      */
@@ -181,7 +294,7 @@ namespace
                     date_valid = false;
                     common::cls();
                     for(unsigned int x{0}; x < v_center::value; ++x) std::cout<< std::endl;
-                    common::center("You can not create a budget for the same month as another budget!");
+                    common::center("You can not create a budget for the same day as another budget!");
                     std::cout.flush();
                     common::wait();
                     common::cls();
@@ -286,6 +399,50 @@ namespace
         return (modified && is_valid);
     }
     
+    /**
+     * @brief Creates a std::string that contains a display for budget statistics.
+     * @param budget Budget to display stats for.
+     * @return a string.
+     */
+    inline std::string budget_statistic_display(const data::budget_data& budget)
+    {
+        std::string temps{"Budget for date: " + common::date_disp(budget.timestamp) + "\n"};
+        budget_statistics_data stats{budget};
+        
+        temps += ("Total money in the budget: " + money_display(budget.total_money) + "\n\n");
+        temps += ("Total money allocated: " + money_display(stats.money_allocated) + "\n");
+        temps += ("Money left: " + money_display(stats.money_unallocated));
+        return temps;
+    }
+    
+    /**
+     * @brief Applies an allocation to a budget for the purpose of calculating it's
+     * statistics.  The budget is not changed, and all modification is temporary.
+     * @param budget The budget to use.
+     * @param allocation The allocation data.
+     * @return budget_statistics_data on a budget that has the allocation applied.
+     */
+    inline budget_statistics_data apply_allocation(data::budget_data& budget, const data::money_alloc_data& allocation)
+    {
+        budget_statistics_data stats;
+        data::money_alloc_data original_alloc;
+        bool found{false};
+        
+        for(std::vector<data::money_alloc_data>::iterator it{budget.allocs.begin()}; ((it != budget.allocs.end()) && !found); ++it)
+        {
+            if((allocation.id == it->id) && !found)
+            {
+                found = true;
+                original_alloc = std::move(*it);
+                (*it) = allocation;
+                
+                stats = std::move(budget_statistics_data{budget});
+                (*it) = std::move(original_alloc);
+            }
+        }
+        return stats;
+    }
+    
     
 }
 
@@ -311,9 +468,6 @@ namespace menu
         pdat.budget_files = std::move(global::budget_paths(pdat.budget_folder));
         do
         {
-            /*todo add analysis option where the user can run an analysis on a budget
-             * that shows how much money is allocated, and how much is left */
-             
             //todo add sorting by date
             common::cls();
             cout<< endl;
@@ -415,27 +569,28 @@ namespace menu
         window_data_class<data::money_alloc_data> scroll_display{b.allocs, money_alloc_list_display};
         key_code_data key;
         
-        user_input::cl();
         scroll_display.win().window_size() = 8;
+        user_input::cl();
         do
         {
             //todo add allocation distribution algorithms: by percent, equally, and add priority distribution with both.
             common::cls();
             cout<< "Today is "<< common::date_disp(tdata::time_class{tdata::current_time()})<< endl;
             cout<< endl;
-            common::center("Budget for " + b.timestamp.month_name() + ", " + std::to_string(b.timestamp.gyear()));
+            common::center("Budget starting " + common::date_disp(b.timestamp));
             for(unsigned int x{0}; x < 3; ++x) cout<< endl;
             scrollDisplay::display_window(scroll_display);
             cout<< endl<< endl;
             cout<< "Total money in this budget: "<< money_display(b.total_money)<< endl;
             cout<< endl;
-            cout<< " m -  Modify total money to the budget"<< endl;
-            cout<< " a -  Add new allocation"<< endl;
-            cout<< " [DEL] -  Delete selected"<< endl;
-            cout<< " [ENTER] -  Modify selected"<< endl;
-            
+            cout<< " m -  -----> Modify total money to the budget"<< endl;
+            cout<< " a -  -----> Add new allocation"<< endl;
+            cout<< " [DEL] -  -> Delete selected"<< endl;
+            cout<< " [ENTER] --  Modify selected"<< endl;
+            cout<< " s -  -----> Statistics"<< endl;
+            cout<< endl;
             cout<< " [BCKSPC] -  Done"<< endl;
-            cout<< " c -  cancel";
+            cout<< " c -  -----  Cancel";
             cout.flush();
             
             key = std::move(user_input::gkey_funct());
@@ -475,7 +630,7 @@ namespace menu
                             if(!b.allocs.empty())
                             {
                                 data::money_alloc_data temp_allocation{scroll_display.selected()};
-                                std::pair<bool, bool> temp_result{modify_allocation(temp_allocation)};
+                                std::pair<bool, bool> temp_result{modify_allocation(b, temp_allocation)};
                                 if(temp_result.first && !temp_result.second)
                                 {
                                     scroll_display.selected() = std::move(temp_allocation);
@@ -489,12 +644,22 @@ namespace menu
                         {
                             data::money_alloc_data new_allocation{"No name", (data::money_t)0};
                             new_allocation.id = data::new_alloc_id(b.allocs);
-                            std::pair<bool, bool> temp_result{modify_allocation(new_allocation)};
+                            std::pair<bool, bool> temp_result{modify_allocation(b, new_allocation)};
                             if(temp_result.first && !temp_result.second)
                             {
                                 b.allocs.push_back(std::move(new_allocation));
                                 result.first = true;
                             }
+                        }
+                        break;
+                        
+                        case 's':
+                        {
+                            common::cls();
+                            cout<< budget_statistic_display(b);
+                            cout.flush();
+                            common::wait();
+                            common::cls();
                         }
                         break;
                         
@@ -530,11 +695,14 @@ namespace menu
     /**
      * @brief Allows the user to modify a budget allocation.
      * @param allocation The allocation to modify.
+     * @param budget The budget referenced.  This is mainly used for 
+     * making calculations about how much money is left in the budget.  The budget
+     * is not modified.
      * @return a std::pair<bool, bool>:
      * first = whether the allocation was modified
      * second = whether the user canceled modification of the allocation.
      */
-    std::pair<bool, bool> modify_allocation(data::money_alloc_data& allocation)
+    std::pair<bool, bool> modify_allocation(data::budget_data& budget, data::money_alloc_data& allocation)
     {
         using std::cout;
         using std::endl;
@@ -545,14 +713,15 @@ namespace menu
         
         do
         {
-            //todo display money available in budget based on total_money - total_money_allocated
             common::cls();
+            cout<< "Money that can be allocated: "<< money_display(apply_allocation(budget, allocation).money_unallocated)<< endl;
             cout<< endl;
             common::center("Modify Budget Allocation");
             for(unsigned int x{0}; x < 4; ++x) cout<< endl;
             cout<< " 1 -  Name: \""<< allocation.name<< "\""<< endl;
             cout<< " 2 -  Value: "<< money_display(allocation.value)<< endl;
             cout<< endl;
+            cout<< " z -  Zero out"<< endl;
             cout<< " c -  Cancel"<< endl;
             cout<< " [BCKSPC] -  Done";
             cout.flush();
@@ -611,6 +780,13 @@ namespace menu
                                 }
                             }
                             common::cls();
+                        }
+                        break;
+                        
+                        case 'z':
+                        {
+                            allocation.value += apply_allocation(budget, allocation).money_unallocated;
+                            result.first = true;
                         }
                         break;
                         
