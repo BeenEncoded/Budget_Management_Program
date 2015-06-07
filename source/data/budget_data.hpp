@@ -51,6 +51,7 @@ namespace data
         std::string name;
         money_t value;
         ID_T id;
+        //todo add priority
     } money_alloc_data;
     
     /**
@@ -80,6 +81,7 @@ namespace data
         std::vector<money_alloc_data> allocs;
         tdata::time_class timestamp;
         ID_T id;
+        //todo add length of time a budget spans
     } budget_data;
     
     money_alloc_data::ID_T new_alloc_id(const std::vector<money_alloc_data>&);

@@ -4,6 +4,7 @@
 #include <string>
 #include <utility>
 #include <sstream>
+#include <algorithm>
 #include <fstream>
 
 #include "budget_menu.hpp"
@@ -142,6 +143,7 @@ namespace
     bool choose_budget_date(global::program_data&, data::budget_data&);
     std::string budget_statistic_display(const data::budget_data&);
     budget_statistics_data apply_allocation(data::budget_data&, const data::money_alloc_data&);
+    bool sort_compare_budgets(const std::string&, const std::string&);
     
     
     /**
@@ -369,6 +371,7 @@ namespace
     {
         disp.erase(disp.begin(), disp.end());
         
+        //todo show resulting budget status after each allocation
         for(unsigned int x{0}; x < allocations.size(); ++x) disp.push_back(std::move(allocation_display(allocations[x])));
     }
     
@@ -440,7 +443,22 @@ namespace
                 (*it) = std::move(original_alloc);
             }
         }
+        if(!found)
+        {
+            budget.allocs.push_back(allocation);
+            stats = std::move(budget_statistics_data{budget});
+            budget.allocs.pop_back();
+        }
         return stats;
+    }
+    
+    /**
+     * @brief Used to sort budgets for budget_list_menu.
+     * @return true if
+     */
+    inline bool sort_compare_budgets(const std::string& b1, const std::string& b2)
+    {
+        return (load_basic_info(b1).timestamp >= load_basic_info(b2).timestamp);
     }
     
     
@@ -466,6 +484,7 @@ namespace menu
         keyboard::key_code_data key;
         
         pdat.budget_files = std::move(global::budget_paths(pdat.budget_folder));
+        std::sort(pdat.budget_files.begin(), pdat.budget_files.end(), sort_compare_budgets);
         do
         {
             //todo add sorting by date
@@ -518,6 +537,7 @@ namespace menu
                                 {
                                     call_mod_budget(scroll_window.selected());
                                     pdat.budget_files = std::move(global::budget_paths(pdat.budget_folder));
+                                    std::sort(pdat.budget_files.begin(), pdat.budget_files.end(), sort_compare_budgets);
                                 }
                             }
                             break;
@@ -526,6 +546,7 @@ namespace menu
                             {
                                 call_create_budget(pdat);
                                 pdat.budget_files = std::move(global::budget_paths(pdat.budget_folder));
+                                std::sort(pdat.budget_files.begin(), pdat.budget_files.end(), sort_compare_budgets);
                             }
                             break;
                             
@@ -595,6 +616,7 @@ namespace menu
             
             key = std::move(user_input::gkey_funct());
             
+            //todo add option to swap order of allocations
             if(keyboard::is_listed_control(key))
             {
                 using namespace keyboard::code;

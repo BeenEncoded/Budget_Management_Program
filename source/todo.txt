@@ -8,6 +8,10 @@ Get the alpha ready for github release:
 
 Finish Coding main features:
     -  add priority to money_alloc_data <--------
-    -  Menus to modify budget_data
+    
     -  Add ability to specify the length of time a budget spans (x number of days/months) and
         allow the user to pick the "currently active" budget
+
+            * mabey make it so that the user can't create a budget that starts
+                during a budget's "lifetime"
+            * add control for user so they can choose the currently "active" budget
