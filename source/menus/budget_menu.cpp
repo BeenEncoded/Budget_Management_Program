@@ -487,7 +487,6 @@ namespace menu
         std::sort(pdat.budget_files.begin(), pdat.budget_files.end(), sort_compare_budgets);
         do
         {
-            //todo add sorting by date
             common::cls();
             cout<< endl;
             common::center("Budgets: ");
