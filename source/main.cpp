@@ -5,7 +5,7 @@
 #include <utility>
 
 #include "common/global/program_data.hpp"
-#include "menus/main_menu.hpp"
+#include "menus/budget_menu.hpp"
 
 
 namespace
@@ -28,10 +28,10 @@ namespace
         return pdat;
     }
     
-    inline int start_prog()
+    __attribute__((unused)) inline int start_prog()
     {
         global::program_data pdat(std::move(load_program_data()));
-        return !menu::main_menu(pdat);
+        return !menu::budget_list_menu(pdat);
     }
     
 }

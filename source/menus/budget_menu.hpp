@@ -1,5 +1,6 @@
 #ifndef MENUS_BUDGET_MENU_HPP_INCLUDED
 #define MENUS_BUDGET_MENU_HPP_INCLUDED
+#include <utility>
 
 #include "common/common.hpp"
 #include "common/global/program_data.hpp"
@@ -8,7 +9,8 @@
 namespace menu
 {
     bool budget_list_menu(global::program_data&);
-    common::result_data<bool> modify_budget(data::budget_data&);
+    std::pair<bool, bool> modify_budget(data::budget_data&);
+    std::pair<bool, bool> modify_allocation(data::budget_data&, data::money_alloc_data&);
     
 }
 

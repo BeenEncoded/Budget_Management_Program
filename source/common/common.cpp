@@ -19,6 +19,13 @@
 namespace
 {
     std::string parent_path(const std::string&);
+    std::string date_selection_display(
+            const tdata::time_class&,
+            const unsigned short&,
+            const std::pair<char, char>&);
+    
+    void date_selection_add(tdata::time_class&, const unsigned short&, const long&);
+    
     
     
     inline std::string parent_path(const std::string& s)
@@ -32,6 +39,115 @@ namespace
         }
         else temps.erase();
         return temps;
+    }
+    
+    /**
+     * @brief Creates a string that represents a date, but adds brackets
+     * around a specified selection.
+     * @param sel
+     * 0 = month
+     * 1 = day
+     * 2 = year
+     * @return " month  [day]  year "
+     */
+    inline std::string date_selection_display(
+            const tdata::time_class& t,
+            const unsigned short& sel,
+            const std::pair<char, char>& brack)
+    {
+        std::string temps;
+        std::pair<char, char> brackets[3]{
+            ((0 == sel) ? brack : std::pair<char, char>{' ', ' '}),
+            ((1 == sel) ? brack : std::pair<char, char>{' ', ' '}),
+            ((2 == sel) ? brack : std::pair<char, char>{' ', ' '})
+        };
+        
+        temps = (brackets[0].first + t.month_name() + brackets[0].second);
+        temps += (brackets[1].first + std::to_string(t.mday()) + brackets[1].second);
+        temps += (brackets[2].first + std::to_string(t.gyear()) + brackets[2].second);
+        return temps;
+    }
+    
+    /**
+     * @brief Adds 'num' units to the selected date unit.
+     * @param sel Selected:
+     * 0 month
+     * 1 day
+     * 2 year
+     * @param num number to increment (or decrement) by.
+     */
+    inline void date_selection_add(tdata::time_class& t, const unsigned short& sel, const long& n)
+    {
+        if(n == 0) return;
+        
+        long num{((n < 0) ? (n * (-1)) : n)};
+        bool subtract{(n < 0)};
+        
+        switch(sel)
+        {
+            case 0:
+            {
+                if(!subtract)
+                {
+                    int temp_month;
+                    for(long x{0}; x < num; ++x)
+                    {
+                        temp_month = t.month();
+                        for(unsigned int y{0}; ((y < 33) && (temp_month == t.month())); ++y)
+                        {
+                            t += tdata::t_const::day;
+                        }
+                    }
+                }
+                else
+                {
+                    int temp_month;
+                    for(long x{0}; x < num; ++x)
+                    {
+                        temp_month = t.month();
+                        for(unsigned int y{0}; ((y < 33) && (temp_month == t.month())); ++y)
+                        {
+                            t -= tdata::t_const::day;
+                        }
+                    }
+                }
+            }
+            break;
+            
+            case 1:
+            {
+                if(!subtract)
+                {
+                    for(long x{0}; x < num; ++x) t += tdata::t_const::day;
+                }
+                else
+                {
+                    for(long x{0}; x < num; ++x) t -= tdata::t_const::day;
+                }
+            }
+            break;
+            
+            case 2:
+            {
+                if(!subtract)
+                {
+                    for(long x{0}; x < num; ++x) t.syear((t.gyear() + 1));
+                }
+                else
+                {
+                    for(long x{0}; x < num; ++x) t.syear((t.gyear() - 1));
+                }
+            }
+            break;
+            
+            default:
+            {
+                ethrow(std::string("Error in \"") + "inline void date_selection\
+_add(tdata::time_class& t, const unsigned short& sel, const long& num): \
+Selection invalid!");
+            }
+            break;
+        }
     }
     
     
@@ -126,6 +242,70 @@ namespace common
 namespace common
 {
     /**
+     * @brief Loads an object from a file.  Type requirements include an overloaded 
+     * operator>>
+     * @param path The full path to the file.
+     * @param t The object to read the data into.
+     * @return true upon graceful execution.
+     */
+    template<typename type>
+    bool load_from_file(const std::string& path, type& t)
+    {
+        using fsys::is_file;
+        using fsys::is_symlink;
+        
+        t = type();
+        if(is_symlink(path).value || !is_file(path).value) return false;
+        
+        std::ifstream in(path, std::ios::binary);
+        bool success(true);
+        
+        in.peek();
+        if(in.good())
+        {
+            in>> t;
+            success = !in.fail();
+        }
+        else success = false;
+        if(in.is_open()) in.close();
+        return success;
+    }
+    
+    template bool load_from_file<data::budget_data>(const std::string&, data::budget_data&);
+    
+    /**
+     * @brief Saves an object to a file.  Type requirements include an overloaded
+     * operator<<
+     * @param path The full path to the file.  WARNING:  If the parent folders
+     * don't already exist, then they will be created.
+     * @param t The object to write.
+     * @return true upon graceful execution.
+     */
+    template<typename type>
+    bool save_to_file(const std::string& path, const type& t)
+    {
+        using fsys::is_folder;
+        using fsys::is_symlink;
+        using fsys::create_folder;
+        
+        {
+            std::string f(parent_path(path));
+            if(!create_folder(f).value)
+            {
+                if(!is_folder(f).value) return false;
+            }
+        }
+        
+        std::ofstream out(path, std::ios::binary);
+        if(out.good()) out<< t;
+        bool success = !out.fail();
+        if(out.is_open()) out.close();
+        return success;
+    }
+    
+    template bool save_to_file<data::budget_data>(const std::string&, const data::budget_data&);
+    
+    /**
      * @brief returns a specified digit within a number.
      * @param num the number to perform the operation on.
      * @param place the place you want to get.  For example,
@@ -183,10 +363,10 @@ namespace common
         return (is_letter(ch) || is_number(ch) || is_special(ch));
     }
     
-    
     /**
      * @brief Provides a more complete user input: pressing "escape" cancels the
-     * input, and support for other features can be easily added.
+     * input, and support for other features can be easily added.  Provides
+     * the same functionality as getline.
      * @param inp the string to store input in.
      * @return A bool: true if the user didn't cancel.
      */
@@ -273,7 +453,12 @@ namespace common
                 }
                 else
                 {
-                    if(ch.control_d[0] == '\n') finished = true;
+                    if(ch.control_d[0] == '\n')
+                    {
+                        display_ansi(restore_pos());
+                        display_ansi(clear_line(0));
+                        finished = true;
+                    }
                 }
             }
         }while(!finished);
@@ -352,126 +537,6 @@ namespace common
     }
     
     /**
-     * @brief Safely retrieves a line from a file given a specified delimiter.  
-     * In case of failure, it will leave the stream in the state it was in
-     * before the function call.  Returns true/false based on success.
-     * @param in std::istream to read from
-     * @param t object to read into
-     * @param delimiter delimiter to read to
-     * @return bool true if the read was a success, false otherwise.
-     */
-    template<class type>
-    bool safe_getline(std::istream& in, type& t, const char& delimiter)
-    {
-        std::string temps;
-        bool success(false);
-        std::istream::pos_type previous_position(in.tellg());
-        
-        t = type();
-        
-        if(in.good())
-        {
-            std::getline(in, temps, delimiter);
-            if(in.good())
-            {
-                std::stringstream ss;
-                ss<< temps;
-                ss>> t;
-                success = true;
-            }
-            else if(!in.eof() && in.fail())
-            {
-                /* So, here we are: we didn't reach the end of the file, 
-                 but somwhere there was a big mistake... the program will
-                 now attempt to salvage the situation: */
-                in.seekg(previous_position);
-                success = false;
-            }
-        }
-        return success;
-    }
-    
-    /**
-     * @brief A specialization of safe_getline for strings.
-     * @param in std::istream to read from
-     * @param s the string to read into
-     * @param delimiter the delimiter to read up to.
-     * @return a bool: true if the read was a success, false otherwise.
-     */
-    template<>
-    bool safe_getline<std::string>(std::istream& in, std::string& s, const char& delimiter)
-    {
-        bool success(false);
-        std::istream::pos_type previous_position(in.tellg());
-        
-        s.erase();
-        
-        if(in.good())
-        {
-            std::getline(in, s, delimiter);
-            if(in.good()) success = true;
-            else if(!in.eof() && in.fail())
-            {
-                /* So, here we are: we didn't reach the end of the file, 
-                 but somwhere there was a big mistake... the program will
-                 now attempt to salvage the situation: */
-                in.seekg(0, std::ios::beg);
-                in.seekg(previous_position);
-                success = false;
-            }
-        }
-        return success;
-    }
-    
-    template<typename type>
-    std::istream& in_mem(std::istream& in, type& t)
-    {
-        t = type();
-        char *mem(new char[sizeof(type)]);
-        
-        in.peek();
-        if(in.good())
-        {
-            unsigned int x(0);
-            for(; ((x < sizeof(type)) && in.good()); ++x)
-            {
-                mem[x] = in.get();
-            }
-            if(((x + 1) < sizeof(type)) && !in.fail()) in.setstate(std::ios_base::failbit);
-            memcpy(&t, mem, sizeof(type));
-        }
-        delete[] mem;
-        return in;
-    }
-    
-    template std::istream& in_mem(std::istream&, unsigned long long&);
-    template std::istream& in_mem(std::istream&, long long&);
-    template std::istream& in_mem(std::istream&, std::size_t&);
-    
-    template<typename type>
-    std::ostream& out_mem(std::ostream& out, const type& t)
-    {
-        char *mem(new char[sizeof(type)]);
-        
-        memcpy(mem, &t, sizeof(type));
-        if(out.good())
-        {
-            unsigned int x(0);
-            for(; ((x < sizeof(type)) && out.good()); ++x)
-            {
-                out<< mem[x];
-            }
-            if(((x + 1) < sizeof(type)) && !out.fail()) out.setstate(std::ios_base::failbit);
-        }
-        delete[] mem;
-        return out;
-    }
-    
-    template std::ostream& out_mem(std::ostream&, const unsigned long long&);
-    template std::ostream& out_mem(std::ostream&, const long long&);
-    template std::ostream& out_mem(std::ostream&, const std::size_t&);
-    
-    /**
      * @brief distributes an integer equally throughout a list of elements
      * given the element type can be accessed.  Distribution is done by
      * settings each element to (val / v.size()).  The remainder is then added,
@@ -499,184 +564,6 @@ namespace common
     }
     
     /**
-     * @brief Loads an object from a file.  Type requirements include an overloaded 
-     * operator>>
-     * @param path The full path to the file.
-     * @param t The object to read the data into.
-     * @return result_data<>.
-     */
-    template<typename type>
-    result_data<> load_from_file(const std::string& path, type& t)
-    {
-        using fsys::is_file;
-        using fsys::is_symlink;
-        
-        t = type();
-        
-        result_data<> result;
-        result.message = "ERROR IN template<typename type> bool load_from_file(\
-const std::string&, type&):  ";
-        
-        if(is_symlink(path).value || !is_file(path).value)
-        {
-            result.message += ("\"" + path + "\" is a symlink or doesn't exist!  \
-Could not load it.");
-            return result;
-        }
-        
-        std::ifstream in(path, std::ios::in);
-        
-        in.peek();
-        if(in.good())
-        {
-            in>> t;
-            if(in.fail())
-            {
-                result.message += "Stream operation failed!";
-                return result;
-            }
-        }
-        else
-        {
-            result.message += "Stream could not be opened!";
-            return result;
-        }
-        in.close();
-        result.success = true;
-        result.message.erase();
-        return result;
-    }
-    
-    template result_data<> load_from_file<data::budget_data>(const std::string&, data::budget_data&);
-    
-    /**
-     * @brief Saves an object to a file.  Type requirements include an overloaded
-     * operator<<
-     * @param path The full path to the file.  WARNING:  If the parent folders
-     * don't already exist, then they will be created.
-     * @param t The object to write.
-     * @return result_data<>.
-     */
-    template<typename type>
-    result_data<> save_to_file(const std::string& path, const type& t)
-    {
-        using fsys::is_folder;
-        using fsys::is_symlink;
-        using fsys::create_folder;
-        
-        result_data<> result;
-        
-        result.message = "ERROR IN: template<typename type> \
-bool save_to_file(const std::string&, const type&):  ";
-        {
-            std::string f(parent_path(path));
-            if(!create_folder(f).value)
-            {
-                if(!is_folder(f).value)
-                {
-                    result.message += ("\"" + f + "\" Could not be created, and \
-doesn't exist!");
-                    return result;
-                }
-            }
-        }
-        
-        std::ofstream out(path, std::ios::out);
-        if(out.good()) out<< t;
-        if(out.fail())
-        {
-            if(out.is_open()) out.close();
-            result.message += "Stream operation failed!";
-            return result;
-        }
-        result.success = true;
-        result.message.erase();
-        return result;
-    }
-    
-    template result_data<> save_to_file<data::budget_data>(const std::string&, const data::budget_data&);
-    
-    /**
-     * @brief Writes a vector of type 'type' to a stream.  Garunteed not to
-     * cause delimiter collisions.  Intended to use in operators.
-     * @param out Stream to write to.
-     * @param v The vector to write.
-     * @return The stream.
-     */
-    template<typename type>
-    std::ostream& write_vector(std::ostream& out, const std::vector<type>& v)
-    {
-        if(out.good())
-        {
-            out_mem<std::size_t>(out, v.size());
-            for(unsigned int x(0); ((x < v.size()) && out.good()); ++x)
-            {
-                out<< v[x];
-            }
-        }
-        return out;
-    }
-    
-    template std::ostream& write_vector<data::budget_data>(std::ostream&, const std::vector<data::budget_data>&);
-    template std::ostream& write_vector<data::money_alloc_data>(std::ostream&, const std::vector<data::money_alloc_data>&);
-    
-    /**
-     * @brief Reads a vector of type 'type' from a stream.  Garunteed not to
-     * cause delimiter collisions. Intended to use in operators.
-     * @param in The stream to read from.
-     * @param v The vector to store the data in.
-     * @return The stream.
-     */
-    template<typename type>
-    std::istream& read_vector(std::istream& in, std::vector<type>& v)
-    {
-        v.erase(v.begin(), v.end());
-        in.peek();
-        if(in.good())
-        {
-            std::size_t size(0);
-            
-            in_mem<std::size_t>(in, size);
-            for(std::size_t x(0); ((x < size) && in.good() && (in.peek() != EOF)); ++x)
-            {
-                v.push_back(type());
-                in>> v.back();
-                if(in.fail() && !in.eof()) v.pop_back();
-                in.peek();
-            }
-            in.peek();
-        }
-        return in;
-    }
-    
-    template std::istream& read_vector<data::budget_data>(std::istream&, std::vector<data::budget_data>&);
-    template std::istream& read_vector<data::money_alloc_data>(std::istream&, std::vector<data::money_alloc_data>&);
-    
-    /**
-     * @brief Peeks 'count' characters.  Can be used to check multi-char delimiters.
-     * The stream is garunteed to be left in the state it was found.
-     * @param in stream to peek
-     * @param count number of characters to peek.
-     * @return A string of the next 'count' characters.  Not garunteed to
-     * be of size 'count'.  If the end of the stream is reached before 'count'
-     * characters can be read, the operation is aborted, and the string is returned.
-     */
-    std::string peek_string(std::istream& in, const unsigned int& count)
-    {
-        std::string temps;
-        
-        in.peek();
-        if(in.good())
-        {
-            std::istream::pos_type pos(in.tellg());
-            for(unsigned int x(0); ((x < count) && (in.peek() != EOF) && in.good()); ++x) temps += in.get();
-            if(!in.good()) in.clear();
-            in.seekg(pos);
-        }
-        return temps;
-    }
-    
-    /**
      * @brief Returns the number of bytes the current position is from
      * the end of the stream.
      */
@@ -691,6 +578,142 @@ doesn't exist!");
             in.seekg(pos);
         }
         return count;
+    }
+    
+    std::string time_disp(const tdata::time_class& t)
+    {
+        return (std::to_string(t.hour()) + ":" + std::to_string(t.minute()) + " " + 
+                std::string((t.am() ? "am" : "pm")));
+    }
+    
+    std::string date_disp(const tdata::time_class& t)
+    {
+        return (t.month_name() + " " + std::to_string(t.mday()) + ", " + 
+                std::to_string(t.gyear()));
+    }
+    
+    /**
+     * @brief Limits a string's maximum size to 'size'.  This is mainly 
+     * intended for menu displays.
+     * @return a string that has a size <= 'size'.  Appends "..."
+     * if the string was resized for context.
+     */
+    std::string fit_str(const std::string& s, const unsigned int& size)
+    {
+        std::string temps{s};
+        if(temps.size() > size)
+        {
+            temps.resize(temps.size() - 3);
+            temps += "...";
+        }
+        return temps;
+    }
+    
+    /**
+     * @brief Returns true if 's' represents any type of number (float, int, etc...).
+     * This function does allow for all types (signed and floating point).
+     * @param s the string to test
+     * @return true if 's' is a number. 
+     */
+    bool str_is_num(const std::string& s)
+    {
+        if(s.empty()) return false;
+        if(!common::is_number(s.back())) return false;
+        if(s.find('.') != std::string::npos)
+        {
+            //if there is more than one decimal:
+            if(s.find('.') != s.rfind('.')) return false;
+        }
+        if(s.find('-') != std::string::npos)
+        {
+            //if there is more than one negative sign:
+            if(s.find('-') != s.rfind('-')) return false;
+        }
+        
+        for(std::string::const_iterator iter{s.begin()}; iter != s.end(); ++iter)
+        {
+            if(((*iter) == '.') || ((*iter) == '-')) continue;
+            if(!common::is_number(*iter)) return false;
+        }
+        return true;
+    }
+    
+    /**
+     * @brief Allows the user to modify a date.
+     * @param t Date to modify
+     * @return True if the user didn't cancel.  If the user cancels, the date
+     * remains unchanged.
+     */
+    bool user_choose_date(tdata::time_class& t)
+    {
+        using keyboard::key_code_data;
+        using std::cout;
+        using std::endl;
+        
+        key_code_data key;
+        bool finished{false}, cancel{false};
+        tdata::time_class temp_time(t);
+        unsigned short selected{1};
+        
+        user_input::cl();
+        do
+        {
+            cls();
+            for(unsigned int x{0}; x < v_center::value; ++x) cout<< endl;
+            cout<< temp_time.wday_name()<< " "<< temp_time.month_name()<< " "<< 
+                    temp_time.mday()<< ", "<< temp_time.gyear()<< endl<< endl;
+            common::center(date_selection_display(temp_time, selected, std::pair<char, char>{'>', '<'}));
+            cout<< endl;
+            for(unsigned int x{0}; x < 5; ++x) cout<< endl;
+            cout<< "\'ESC\' -  Cancel"<< endl;
+            cout<< "\'\\\' -  Set to today";
+            cout.flush();
+            
+            key = std::move(user_input::getch_funct());
+            
+            if(keyboard::is_listed_control(key))
+            {
+                using namespace keyboard::code;
+                using keyboard::keys;
+                
+                if(key == keys[up::value]) date_selection_add(temp_time, selected, 1);
+                else if(key == keys[down::value]) date_selection_add(temp_time, selected, -1);
+                else if(key == keys[pgup::value]) date_selection_add(temp_time, selected, 10);
+                else if(key == keys[pgdown::value]) date_selection_add(temp_time, selected, -10);
+                else if((key == keys[left::value]) && (selected > 0)) selected = ((selected + 2) % 3);
+                else if((key == keys[right::value]) && (selected < 2)) selected = ((selected + 1) % 3);
+                else if(key == keys[escape::value])
+                {
+                    cancel = true;
+                    finished = true;
+                }
+            }
+            else if(!key.control_d.empty())
+            {
+                switch(std::tolower((char)key.control_d[0]))
+                {
+                    case '\n':
+                    {
+                        finished = true;
+                    }
+                    break;
+                    
+                    case '\\':
+                    {
+                        temp_time = tdata::current_time();
+                    }
+                    break;
+                    
+                    default:
+                    {
+                    }
+                    break;
+                }
+            }
+        }
+        while(!finished);
+        if(!cancel) t = std::move(temp_time);
+        return !cancel;
     }
     
     

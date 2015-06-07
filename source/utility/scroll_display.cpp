@@ -8,6 +8,7 @@
 #include <utility>
 
 #include "scroll_display.hpp"
+#include "data/budget_data.hpp"
 
 #ifndef ethrow
 #define ethrow(MSG) throw std::runtime_error(std::string(std::string(__FILE__) + \
@@ -84,7 +85,7 @@ namespace scrollDisplay
         return *this;
     }
     
-    /** True/false based on whether it moved the window or not. */
+    /** @brief True/false based on whether it moved the window or not. */
     bool scroll_display_class::scroll_up()
     {
         this->sync();
@@ -100,7 +101,7 @@ namespace scrollDisplay
         return success;
     }
     
-    /** True/false based on whether it moved the window or not. */
+    /** @brief True/false based on whether it moved the window or not. */
     bool scroll_display_class::scroll_down()
     {
         this->sync();
@@ -119,7 +120,7 @@ namespace scrollDisplay
         return success;
     }
     
-    /** True/false based on whether it moved the window or not. */
+    /** @brief True/false based on whether it moved the window or not. */
     bool scroll_display_class::scroll_pg_down()
     {
         this->sync();
@@ -138,7 +139,7 @@ namespace scrollDisplay
         return success;
     }
     
-    /** True/false based on whether it moved the window or not. */
+    /** @brief True/false based on whether it moved the window or not. */
     bool scroll_display_class::scroll_pg_up()
     {
         this->sync();
@@ -159,7 +160,7 @@ namespace scrollDisplay
         return success;
     }
     
-    /** Returns the "window" as a list of strings.  This can
+    /** @brief Returns the "window" as a list of strings.  This can
      * be displayed. */
     std::vector<std::string> scroll_display_class::window()
     {
@@ -176,8 +177,10 @@ namespace scrollDisplay
         return tempv;
     }
     
-    /** Keeps the window within the bounds of the display, the
-     * display the proper size, and the positions within bounds. */
+    /** @brief Keeps the window within the bounds of the display, the
+     * display the proper size, and the positions within bounds.  The window
+     * positions relative to the entire vector are derived from pos.whole, so
+     * only pos.whole is needed to move the position. */
     void scroll_display_class::sync()
     {
         if(this->wind.size < 0) this->wind.size *= (-1);
@@ -207,7 +210,9 @@ namespace scrollDisplay
             this->pos.part = (this->pos.whole - this->wind.beg);
             
             //make sure that we can always have a full window, within the vector's bounds:
-            if((unsigned(this->end_pos()) == (this->display->size() - 1)) && (this->current_wsize() < this->wind.size))
+            if((unsigned(this->end_pos()) == (this->display->size() - 1)) && 
+                    (this->current_wsize() < this->wind.size) && 
+                    ((unsigned)this->display->size() >= this->wind.size))
             {
                 this->wind.beg = (this->display->size() - this->wind.size);
             }
@@ -305,7 +310,22 @@ namespace scrollDisplay
         return success;
     }
     
-    /** Returns the current position in the window.  part
+    /**
+     * @brief Jumps to position "pos".
+     * @return true if the display was modified.
+     */
+    bool scroll_display_class::jmp(const unsigned int& pos)
+    {
+        this->sync();
+        if(this->display->empty()) return false;
+        if(pos >= this->display->size()) return false;
+        
+        this->pos.whole = pos;
+        this->sync();
+        return true;
+    }
+    
+    /** @brief Returns the current position in the window.  part
      * represents the position relative to the window, and
      * whole represents the position relative to the entire
      * display.*/
@@ -315,14 +335,14 @@ namespace scrollDisplay
         return this->pos;
     }
     
-    /** Returns the size of the scroll display.  can be 
+    /** @brief Returns the size of the scroll display.  can be 
      * modified directly. */
     long& scroll_display_class::window_size()
     {
         return this->wind.size;
     }
     
-    /** Returns the first position of the window, relative to the 
+    /** @brief Returns the first position of the window, relative to the 
      * entire display. */
     const signed long& scroll_display_class::window_beg()
     {
@@ -330,7 +350,7 @@ namespace scrollDisplay
         return this->wind.beg;
     }
     
-    /** Calculates the last possible index that can
+    /** @brief Calculates the last possible index that can
      * be safely referenced from the pointed vector, based on where the window
      * is positioned.*/
     signed long scroll_display_class::end_pos() const
@@ -355,7 +375,7 @@ namespace scrollDisplay
         return temp;
     }
     
-    /** Returns the (real) size of the window which has been "resized"
+    /** @brief Returns the (real) size of the window which has been "resized"
      * to fit within the pointed vector.  Does not reflect
      * the value of wind.size.  (this should be <= wind.size)*/
     signed long scroll_display_class::current_wsize() const
@@ -582,10 +602,32 @@ namespace scrollDisplay
     }
     
     
+    template class window_data_class<std::string>;
+    template class window_data_class<data::money_alloc_data>;
 }
 
 namespace
 {
+    std::string limit_length(const std::string&, const unsigned int&);
+    
+    
+    
+    inline std::string limit_length(const std::string& s, const unsigned int& len)
+    {
+        if(s.empty()) return s;
+        if(s.size() < len) return s;
+        
+        std::string temps(s);
+        
+        if(temps.size() > len)
+        {
+            temps.resize((len - 3));
+            temps += "...";
+        }
+        return temps;
+    }
+    
+    
 }
 
 //misc functions
@@ -601,7 +643,7 @@ namespace scrollDisplay
      */
     template<typename type>
     void display_window(
-            const window_data_class<type>& win, 
+            window_data_class<type>& win, 
             const std::pair<char, char>& bracket_char, 
             const std::pair<char, char>& spec_bracket_char, 
             const std::unordered_set<unsigned int>& spec_selected)
@@ -611,42 +653,65 @@ namespace scrollDisplay
         
         if(!win.gdata()->empty())
         {
-            unsigned int e_before(win.win().window_beg()), 
-                    e_after((win.gdata()->size() - (win.win().window_beg() + win.win().window_size())));
-            std::vector<std::string> disp(std::move(win.win().window()));
+            constexpr unsigned int win_width(70);
+            
+            scroll_display_class *scroll_window(&win.win()); //this way we don't force an update on each access
+            unsigned int e_before(scroll_window->window_beg()), 
+                    e_after((win.gdata()->size() - (scroll_window->window_beg() + scroll_window->window_size())));
+            std::vector<std::string> disp(std::move(scroll_window->window()));
             bool is_selected(false), is_special_selected(false);
             
-            if(win.win().gpos().whole >= win.win().window_size())
+            if(scroll_window->gpos().whole >= scroll_window->window_size())
             {
-                cout<< std::string(((70 / 2) - (std::to_string(e_before).size() / 2)), ' ')<< e_before<< endl;
-                cout<< std::string(70, '^')<< endl;
+                cout<< std::string(((win_width / 2) - (std::to_string(e_before).size() / 2)), ' ')<< e_before<< endl;
+                cout<< std::string(win_width, '^')<< endl;
             }
+            else cout<< std::string(70, '-')<< endl;
             for(unsigned int x(0); x < disp.size(); ++x)
             {
-                is_special_selected = (spec_selected.find((x + win.win().window_beg())) != spec_selected.end());
-                is_selected = (x == win.win().gpos().part);
+                is_special_selected = (spec_selected.find((x + scroll_window->window_beg())) != spec_selected.end());
+                is_selected = ((signed short)x == scroll_window->gpos().part);
+                
                 cout<< (is_special_selected ? spec_bracket_char.first : ' ');
                 cout<< (is_selected ? bracket_char.first : ' ');
+                
+                disp[x] = limit_length(disp[x], (win_width - 4));
+                if(disp[x].size() < (win_width - 4)) disp[x] += std::string(((win_width - 4) - disp[x].size()), ' ');
                 cout<< disp[x];
-                if(is_selected) cout<< bracket_char.second;
+                
+                cout<< (is_selected ? bracket_char.second : ' ');
                 if(is_special_selected) cout<< spec_bracket_char.second;
                 
                 if(x < (disp.size() - 1)) cout<< endl;
                 else cout.flush();
             }
             //to create a constant sized boundry, write a number of newlines if the display isn't full:
-            for(unsigned int x(0); x < (win.win().window_size() - disp.size()); ++x)
+            for(unsigned int x(0); x < (scroll_window->window_size() - disp.size()); ++x)
             {
                 cout<< endl;
             }
-            if(e_after > 0)
+            if((e_after > 0) && (win.gdata()->size() > (unsigned)(scroll_window->window_beg() + scroll_window->window_size())))
             {
                 cout<< std::string(70, 'V')<< endl;
                 cout<< std::string(((70 / 2) - (std::to_string(e_after).size() / 2)), ' ')<< e_after;
             }
+            else cout<< std::string(70, '-');
             cout.flush();
         }
     }
+    
+    template void display_window<std::string>(
+            window_data_class<std::string>&,
+            const std::pair<char, char>&,
+            const std::pair<char, char>&,
+            const std::unordered_set<unsigned int>&);
+            
+    template void display_window<data::money_alloc_data>(
+            window_data_class<data::money_alloc_data>&,
+            const std::pair<char, char>&,
+            const std::pair<char, char>&,
+            const std::unordered_set<unsigned int>&);
+    
     
     /**
      * @brief Displays a scroll window.  Does not append a new line.
@@ -655,21 +720,28 @@ namespace scrollDisplay
      */
     template<typename type>
     void display_window(
-            const window_data_class<type>& win,
+            window_data_class<type>& win,
             const std::pair<char, char>& bracks)
     {
         display_window<type>(win, bracks, std::pair<char, char>('>', '<'), std::unordered_set<unsigned int>());
     }
+    
+    template void display_window(window_data_class<std::string>&,
+            const std::pair<char, char>&);
+    template void display_window<data::money_alloc_data>(window_data_class<data::money_alloc_data>&, const std::pair<char, char>&);
     
     /**
      * @brief Displays a scroll window.  Does not append a new line.
      * @param win The window to show
      */
     template<typename type>
-    void display_window(const window_data_class<type>& w)
+    void display_window(window_data_class<type>& w)
     {
         display_window(w, std::pair<char, char>('[', ']'));
     }
+    
+    template void display_window<std::string>(window_data_class<std::string>&);
+    template void display_window<data::money_alloc_data>(window_data_class<data::money_alloc_data>&);
     
     
 }

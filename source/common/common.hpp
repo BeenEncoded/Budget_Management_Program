@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "global/global_defines.hpp"
+#include "utility/time_class.hpp"
 
 namespace common
 {
@@ -53,15 +54,14 @@ namespace common
     bool prompt_user(const std::string&);
     std::string peek_string(std::istream&, const unsigned int&);
     std::istream::pos_type inavail(std::istream&);
-    template<class type> bool safe_getline(std::istream&, type&, const char&);
-    template<> bool safe_getline<std::string>(std::istream&, std::string&, const char&);
-    template<typename type> std::istream& in_mem(std::istream&, type&);
-    template<typename type> std::ostream& out_mem(std::ostream&, const type&);
+    std::string time_disp(const tdata::time_class&);
+    std::string date_disp(const tdata::time_class&);
+    std::string fit_str(const std::string&, const unsigned int&);
+    bool str_is_num(const std::string&);
+    bool user_choose_date(tdata::time_class&);
     template<typename type1, typename type2> void distribute_equally(const type1&, std::vector<type2>&, void (*access)(type2&, type1*&));
-    template<typename type> result_data<> load_from_file(const std::string&, type&);
-    template<typename type> result_data<> save_to_file(const std::string&, const type&);
-    template<typename type> std::ostream& write_vector(std::ostream&, const std::vector<type>&);
-    template<typename type> std::istream& read_vector(std::istream&, std::vector<type>&);
+    template<typename type> bool load_from_file(const std::string&, type&);
+    template<typename type> bool save_to_file(const std::string&, const type&);
     
 }
 

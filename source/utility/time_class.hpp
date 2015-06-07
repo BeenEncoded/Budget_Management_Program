@@ -12,10 +12,10 @@ namespace tdata
     //time constants: 
     namespace t_const
     {
-        typedef const_int_type<60>                   minute;
-        typedef const_int_type<(minute::value * 60)> hour;
-        typedef const_int_type<(hour::value * 24)>   day;
-        typedef const_int_type<(day::value * 7)>     week;
+        constexpr long minute{60};
+        constexpr long hour{minute * 60};
+        constexpr long day{hour * 24};
+        constexpr long week{day * 7};
     }
     
     typedef class time_class time_class;
