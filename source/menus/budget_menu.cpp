@@ -696,6 +696,11 @@ namespace menu
                         {
                             common::cls();
                             for(unsigned int x{0}; x < v_center::value; ++x) cout<< endl;
+                            cout<< "Current money budgeted: "<< money_display(b.total_money)<< endl;
+                            cout<< "Money left in budget: "<< money_display(budget_statistics_data{b}.money_unallocated)<< endl;
+                            cout<< endl<< endl;
+                            cout<< "Money that would zero budget: "<< money_display(budget_statistics_data{b}.money_allocated)<< endl;
+                            cout<< endl;
                             cout<< "Enter the total money you have for this budget: $";
                             cout.flush();
                             if(user_get_money_value(b.total_money)) result.first = true;
