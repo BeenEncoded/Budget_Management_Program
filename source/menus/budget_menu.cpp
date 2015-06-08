@@ -15,6 +15,7 @@
 #include "utility/scroll_display.hpp"
 #include "utility/filesystem.hpp"
 #include "utility/stream_operations.hpp"
+#include "submenu/move_element.hpp"
 
 
 /* budget_statistics_data: */
@@ -589,7 +590,7 @@ namespace menu
         window_data_class<data::money_alloc_data> scroll_display{b.allocs, money_alloc_list_display};
         key_code_data key;
         
-        scroll_display.win().window_size() = 8;
+        scroll_display.win().window_size() = 7;
         user_input::cl();
         do
         {
@@ -607,6 +608,7 @@ namespace menu
             cout<< " a -  -----> Add new allocation"<< endl;
             cout<< " [DEL] -  -> Delete selected"<< endl;
             cout<< " [ENTER] --  Modify selected"<< endl;
+            cout<< " [SPCE] ---> Move Selected"<< endl;
             cout<< " s -  -----> Statistics"<< endl;
             cout<< endl;
             cout<< " [BCKSPC] -  Done"<< endl;
@@ -615,7 +617,6 @@ namespace menu
             
             key = std::move(user_input::gkey_funct());
             
-            //todo add option to swap order of allocations
             if(keyboard::is_listed_control(key))
             {
                 using namespace keyboard::code;
@@ -698,6 +699,15 @@ namespace menu
                             cout<< "Enter the total money you have for this budget: $";
                             cout.flush();
                             if(user_get_money_value(b.total_money)) result.first = true;
+                        }
+                        break;
+                        
+                        case ' ':
+                        {
+                            if(submenu::move_vector_element<data::money_alloc_data>(scroll_display, b.allocs))
+                            {
+                                result.first = true;
+                            }
                         }
                         break;
                         

@@ -231,6 +231,8 @@ namespace scrollDisplay
             if(this->pos.whole > 0)
             {
                 this->pos.whole--;
+                this->sync();
+                success = true;
             }
         }
         return success;
