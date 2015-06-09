@@ -15,39 +15,91 @@ namespace
 {
 }
 
+//alloc_statistics_data
+namespace data
+{
+    alloc_statistics_data::alloc_statistics_data() : 
+            balance{0}
+    {
+    }
+    
+    alloc_statistics_data::alloc_statistics_data(const alloc_statistics_data& a) : 
+            balance{a.balance}
+    {
+    }
+    
+    alloc_statistics_data::alloc_statistics_data(alloc_statistics_data&& a) noexcept :
+            balance{std::move(a.balance)}
+    {
+    }
+    
+    alloc_statistics_data::~alloc_statistics_data()
+    {
+    }
+    
+    alloc_statistics_data& alloc_statistics_data::operator=(const alloc_statistics_data& a)
+    {
+        if(this != &a)
+        {
+            this->balance = a.balance;
+        }
+        return *this;
+    }
+    
+    alloc_statistics_data& alloc_statistics_data::operator=(alloc_statistics_data&& a) noexcept
+    {
+        if(this != &a)
+        {
+            this->balance = std::move(a.balance);
+        }
+        return *this;
+    }
+    
+    
+}
+
 //money_alloc_data:
 namespace data
 {
     money_alloc_data::money_alloc_data(const money_alloc_data& m) noexcept : 
-            name(m.name),
-            value(m.value),
-            id(m.id)
+            name{m.name},
+            value{m.value},
+            id{m.id},
+            meta_data{((m.meta_data == nullptr) ? nullptr : (new alloc_statistics_data(*(m.meta_data))))}
     {
     }
     
     money_alloc_data::money_alloc_data(money_alloc_data&& m) noexcept : 
-            name(std::move(m.name)),
-            value(std::move(m.value)),
-            id(std::move(m.id))
+            name{std::move(m.name)}, 
+            value{std::move(m.value)}, 
+            id{std::move(m.id)}, 
+            meta_data{((m.meta_data == nullptr) ? nullptr : (new alloc_statistics_data(*(m.meta_data))))}
     {
     }
     
     money_alloc_data::money_alloc_data(const std::string& n, const money_t& m) noexcept :
-            name(n),
-            value(m),
-            id(0)
+            name{n}, 
+            value{m}, 
+            id{0}, 
+            meta_data{nullptr}
     {
     }
     
     money_alloc_data::money_alloc_data() noexcept : 
-            name(),
-            value(0),
-            id(0)
+            name{},
+            value{0},
+            id{0}, 
+            meta_data{nullptr}
     {
     }
     
     money_alloc_data::~money_alloc_data()
     {
+        if(this->meta_data != nullptr)
+        {
+            delete this->meta_data;
+            this->meta_data = nullptr;
+        }
     }
     
     money_alloc_data& money_alloc_data::operator=(const money_alloc_data& m)
@@ -57,6 +109,19 @@ namespace data
             this->value = m.value;
             this->name = m.name;
             this->id = m.id;
+            if(m.meta_data != nullptr)
+            {
+                if(this->meta_data == nullptr) this->meta_data = new alloc_statistics_data;
+                (*(this->meta_data)) = (*(m.meta_data));
+            }
+            else
+            {
+                if(this->meta_data != nullptr)
+                {
+                    delete this->meta_data;
+                    this->meta_data = nullptr;
+                }
+            }
         }
         return *this;
     }
@@ -66,6 +131,22 @@ namespace data
         this->value = std::move(m.value);
         this->name = std::move(m.name);
         this->id = std::move(m.id);
+        
+        /* Because this object is responsible for deleting the pointer, we can't
+         * move the pointed-to object. */
+        if(m.meta_data != nullptr)
+        {
+            if(this->meta_data == nullptr) this->meta_data = new alloc_statistics_data;
+            (*(this->meta_data)) = (*(m.meta_data));
+        }
+        else
+        {
+            if(this->meta_data != nullptr)
+            {
+                delete this->meta_data;
+                this->meta_data = nullptr;
+            }
+        }
         return *this;
     }
     

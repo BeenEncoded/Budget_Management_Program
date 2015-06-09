@@ -603,7 +603,7 @@ namespace common
         std::string temps{s};
         if(temps.size() > size)
         {
-            temps.resize(temps.size() - 3);
+            temps.resize(size - 3);
             temps += "...";
         }
         return temps;

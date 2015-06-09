@@ -145,6 +145,7 @@ namespace
     std::string budget_statistic_display(const data::budget_data&);
     budget_statistics_data apply_allocation(data::budget_data&, const data::money_alloc_data&);
     bool sort_compare_budgets(const std::string&, const std::string&);
+    void update_budget_alloc_stats(data::budget_data&);
     
     
     /**
@@ -360,8 +361,18 @@ namespace
         
         constexpr unsigned int name_size{20};
         
-        return std::string((fit_str(a.name, name_size) + std::string((name_size - fit_str(a.name, name_size).size()), ' ') + 
-                std::string(4, ' ') + money_display(a.value)));
+        std::string temps{(fit_str(a.name, name_size) + std::string((name_size - fit_str(a.name, name_size).size()), ' ') + 
+                std::string(4, ' ') + money_display(a.value)) + std::string((10 - money_display(a.value).size()), ' ') + 
+                "Balance: "};
+        if(a.meta_data != nullptr)
+        {
+            temps += money_display(a.meta_data->balance);
+        }
+        else
+        {
+            temps += "[Error dereferencing data::money_alloc_data::meta_data::balance]";
+        }
+        return temps;
     }
     
     /**
@@ -372,7 +383,6 @@ namespace
     {
         disp.erase(disp.begin(), disp.end());
         
-        //todo show resulting budget status after each allocation
         for(unsigned int x{0}; x < allocations.size(); ++x) disp.push_back(std::move(allocation_display(allocations[x])));
     }
     
@@ -460,6 +470,22 @@ namespace
     inline bool sort_compare_budgets(const std::string& b1, const std::string& b2)
     {
         return (load_basic_info(b1).timestamp >= load_basic_info(b2).timestamp);
+    }
+    
+    inline void update_budget_alloc_stats(data::budget_data& b)
+    {
+        data::money_t money_left{b.total_money};
+        
+        for(unsigned int x{0}; x < b.allocs.size(); ++x)
+        {
+            if(b.allocs[x].meta_data == nullptr) b.allocs[x].meta_data = new data::alloc_statistics_data;
+            else
+            {
+                *(b.allocs[x].meta_data) = data::alloc_statistics_data{};
+            }
+            money_left -= b.allocs[x].value;
+            b.allocs[x].meta_data->balance = money_left;
+        }
     }
     
     
@@ -591,6 +617,7 @@ namespace menu
         key_code_data key;
         
         scroll_display.win().window_size() = 7;
+        update_budget_alloc_stats(b);
         user_input::cl();
         do
         {
@@ -636,6 +663,7 @@ namespace menu
                         if(common::prompt_user("Do you really want to delete \"" + scroll_display.selected().name + "\"?"))
                         {
                             scroll_display.remove_selected();
+                            update_budget_alloc_stats(b);
                             result.first = true;
                         }
                     }
@@ -656,6 +684,7 @@ namespace menu
                                 if(temp_result.first && !temp_result.second)
                                 {
                                     scroll_display.selected() = std::move(temp_allocation);
+                                    update_budget_alloc_stats(b);
                                     result.first = true;
                                 }
                             }
@@ -670,6 +699,7 @@ namespace menu
                             if(temp_result.first && !temp_result.second)
                             {
                                 b.allocs.push_back(std::move(new_allocation));
+                                update_budget_alloc_stats(b);
                                 result.first = true;
                             }
                         }
@@ -703,15 +733,24 @@ namespace menu
                             cout<< endl;
                             cout<< "Enter the total money you have for this budget: $";
                             cout.flush();
-                            if(user_get_money_value(b.total_money)) result.first = true;
+                            if(user_get_money_value(b.total_money))
+                            {
+                                result.first = true;
+                                update_budget_alloc_stats(b);
+                            }
                         }
                         break;
                         
                         case ' ':
                         {
-                            if(submenu::move_vector_element<data::money_alloc_data>(scroll_display, b.allocs))
+                            //note this is how I'm implementing priority: based on order of the elements.
+                            if(b.allocs.size() > 1)
                             {
-                                result.first = true;
+                                if(submenu::move_vector_element<data::money_alloc_data>(scroll_display, b.allocs))
+                                {
+                                    result.first = true;
+                                    update_budget_alloc_stats(b);
+                                }
                             }
                         }
                         break;
@@ -724,7 +763,7 @@ namespace menu
                 }
             }
         }while(!finished);
-        if(result.second && result.first) b = original_budget;
+        if(result.second && result.first) b = std::move(original_budget);
         return result;
     }
     
