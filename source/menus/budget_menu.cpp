@@ -625,6 +625,7 @@ namespace menu
      */
     std::pair<bool, bool> modify_budget(data::budget_data& b)
     {
+        //todo add a budget report that shows all allocations, balances, and subtotals that can be easily shared and looks nice.
         using scrollDisplay::window_data_class;
         using keyboard::key_code_data;
         using std::cout;
@@ -640,6 +641,7 @@ namespace menu
         user_input::cl();
         do
         {
+            //cur_pos distribution
             //todo add allocation distribution algorithms: by percent, equally, and add priority distribution with both.
             common::cls();
             cout<< "Today is "<< common::date_disp(tdata::time_class{tdata::current_time()})<< endl;
