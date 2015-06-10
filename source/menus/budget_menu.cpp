@@ -5,6 +5,7 @@
 #include <utility>
 #include <sstream>
 #include <algorithm>
+#include <functional>
 #include <fstream>
 
 #include "budget_menu.hpp"
@@ -146,6 +147,7 @@ namespace
     budget_statistics_data apply_allocation(data::budget_data&, const data::money_alloc_data&);
     bool sort_compare_budgets(const std::string&, const std::string&);
     void update_budget_alloc_stats(data::budget_data&);
+    void clear_budget_alloc_stats(data::budget_data&);
     
     
     /**
@@ -420,12 +422,12 @@ namespace
      */
     inline std::string budget_statistic_display(const data::budget_data& budget)
     {
-        std::string temps{"Budget for date: " + common::date_disp(budget.timestamp) + "\n"};
+        std::string temps{"Budget for date: " + common::date_disp(budget.timestamp) + "\n\n"};
         budget_statistics_data stats{budget};
         
-        temps += ("Total money in the budget: " + money_display(budget.total_money) + "\n\n");
-        temps += ("Total money allocated: " + money_display(stats.money_allocated) + "\n");
-        temps += ("Money left: " + money_display(stats.money_unallocated));
+        temps += ("Total money in the budget: " + money_display(budget.total_money) + "\n");
+        temps += ("    Total money allocated: " + money_display(stats.money_allocated) + "\n\n");
+        temps += ("               Money left: " + money_display(stats.money_unallocated));
         return temps;
     }
     
@@ -472,6 +474,9 @@ namespace
         return (load_basic_info(b1).timestamp >= load_basic_info(b2).timestamp);
     }
     
+    /**
+     * @brief (re)Generates allocation statistics for each allocation.
+     */
     inline void update_budget_alloc_stats(data::budget_data& b)
     {
         data::money_t money_left{b.total_money};
@@ -485,6 +490,21 @@ namespace
             }
             money_left -= b.allocs[x].value;
             b.allocs[x].meta_data->balance = money_left;
+        }
+    }
+    
+    /**
+     * @brief Removes all allocation statistics from the budget.
+     */
+    inline void clear_budget_alloc_stats(data::budget_data& b)
+    {
+        for(std::vector<data::money_alloc_data>::iterator it{b.allocs.begin()}; it != b.allocs.end(); ++it)
+        {
+            if(it->meta_data != nullptr)
+            {
+                delete it->meta_data;
+                it->meta_data = nullptr;
+            }
         }
     }
     
@@ -617,7 +637,6 @@ namespace menu
         key_code_data key;
         
         scroll_display.win().window_size() = 7;
-        update_budget_alloc_stats(b);
         user_input::cl();
         do
         {
@@ -627,7 +646,11 @@ namespace menu
             cout<< endl;
             common::center("Budget starting " + common::date_disp(b.timestamp));
             for(unsigned int x{0}; x < 3; ++x) cout<< endl;
+            
+            update_budget_alloc_stats(b);
             scrollDisplay::display_window(scroll_display);
+            clear_budget_alloc_stats(b);
+            
             cout<< endl<< endl;
             cout<< "Total money in this budget: "<< money_display(b.total_money)<< endl;
             cout<< endl;
@@ -663,7 +686,6 @@ namespace menu
                         if(common::prompt_user("Do you really want to delete \"" + scroll_display.selected().name + "\"?"))
                         {
                             scroll_display.remove_selected();
-                            update_budget_alloc_stats(b);
                             result.first = true;
                         }
                     }
@@ -684,7 +706,6 @@ namespace menu
                                 if(temp_result.first && !temp_result.second)
                                 {
                                     scroll_display.selected() = std::move(temp_allocation);
-                                    update_budget_alloc_stats(b);
                                     result.first = true;
                                 }
                             }
@@ -699,7 +720,6 @@ namespace menu
                             if(temp_result.first && !temp_result.second)
                             {
                                 b.allocs.push_back(std::move(new_allocation));
-                                update_budget_alloc_stats(b);
                                 result.first = true;
                             }
                         }
@@ -708,8 +728,7 @@ namespace menu
                         case 's':
                         {
                             common::cls();
-                            cout<< budget_statistic_display(b);
-                            cout.flush();
+                            cout<< budget_statistic_display(b)<< endl<< endl;
                             common::wait();
                             common::cls();
                         }
@@ -736,22 +755,23 @@ namespace menu
                             if(user_get_money_value(b.total_money))
                             {
                                 result.first = true;
-                                update_budget_alloc_stats(b);
                             }
                         }
                         break;
                         
                         case ' ':
                         {
+                            update_budget_alloc_stats(b);
                             //note this is how I'm implementing priority: based on order of the elements.
                             if(b.allocs.size() > 1)
                             {
-                                if(submenu::move_vector_element<data::money_alloc_data>(scroll_display, b.allocs))
+                                std::function<void()> update_disp{[&b]()->void{update_budget_alloc_stats(b);}};
+                                if(submenu::move_vector_element(scroll_display, b.allocs, &update_disp))
                                 {
                                     result.first = true;
-                                    update_budget_alloc_stats(b);
                                 }
                             }
+                            clear_budget_alloc_stats(b);
                         }
                         break;
                         

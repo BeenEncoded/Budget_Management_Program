@@ -1,5 +1,6 @@
 #include <iostream>
 #include <vector>
+#include <functional>
 #include <utility>
 
 #include "move_element.hpp"
@@ -52,10 +53,12 @@ namespace submenu
      * @param window the scroll_display to use.  This is needed because the 
      * vector is visually represented.
      * @param v The vector.
+     * @param update A function that can be optionally used to specify 
+     * a function to use to update the list after order has been changed.
      * @return true if the user didn't cancel.
      */
-    template<typename type>
-    bool move_vector_element(scrollDisplay::window_data_class<type>& window, std::vector<type>& v)
+    template<typename type1, typename type2>
+    bool move_vector_element(scrollDisplay::window_data_class<type1>& window, std::vector<type1>& v, const std::function<type2>* const update)
     {
         using scrollDisplay::window_data_class;
         using scrollDisplay::display_window;
@@ -86,11 +89,13 @@ namespace submenu
                 {
                     move_element_up(v, window.win().gpos().whole);
                     window.win().mv_up();
+                    if(update != nullptr) (*update)();
                 }
                 else if(key == keys[down::value])
                 {
                     move_element_down(v, window.win().gpos().whole);
                     window.win().mv_down();
+                    if(update != nullptr) (*update)();
                 }
                 else if(key == keys[end::value])
                 {
@@ -100,6 +105,7 @@ namespace submenu
                         moved = move_element_down(v, window.win().gpos().whole);
                         if(moved) moved = window.win().mv_down();
                     }while(moved);
+                    if(update != nullptr) (*update)();
                 }
                 else if(key == keys[home::value])
                 {
@@ -109,6 +115,7 @@ namespace submenu
                         moved = move_element_up(v, window.win().gpos().whole);
                         if(moved) moved = window.win().mv_up();
                     }while(moved);
+                    if(update != nullptr) (*update)();
                 }
                 else if(key == keys[escape::value])
                 {
@@ -135,7 +142,7 @@ namespace submenu
         }while(!finished);
         if(cancel)
         {
-            type temp_t{std::move(v[window.win().gpos().whole])};
+            type1 temp_t{std::move(v[window.win().gpos().whole])};
             std::size_t temp_pos{window.win().gpos().whole};
             
             v.erase((v.begin() + temp_pos));
@@ -144,7 +151,8 @@ namespace submenu
         return !cancel;
     }
     
-    template bool move_vector_element<data::money_alloc_data>(scrollDisplay::window_data_class<data::money_alloc_data>&, std::vector<data::money_alloc_data>&);
+    template bool move_vector_element<data::money_alloc_data, void()>(scrollDisplay::window_data_class<data::money_alloc_data>&, 
+            std::vector<data::money_alloc_data>&, const std::function<void()>* const);
     
     
 }
