@@ -43,13 +43,6 @@ namespace data
     {
         typedef short percent_t;
         
-        enum distribution_type
-        {
-            none = 0,
-            bpercent,
-            equally
-        };
-        
         explicit distribution_data();
         distribution_data(const distribution_data&);
         distribution_data(distribution_data&&) noexcept;
@@ -59,10 +52,7 @@ namespace data
         distribution_data& operator=(const distribution_data&);
         distribution_data& operator=(distribution_data&&) noexcept;
         
-        std::vector<std::string> distribution_name() const;
-        
         bool enabled;
-        distribution_type dist_t; //todo remove this
         percent_t percent_value;
     } distribution_data;
     

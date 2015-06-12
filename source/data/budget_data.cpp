@@ -20,21 +20,18 @@ namespace data
 {
     distribution_data::distribution_data() : 
             enabled{false},
-            dist_t{distribution_data::none},
             percent_value{0}
     {
     }
     
     distribution_data::distribution_data(const distribution_data& d) : 
             enabled{d.enabled},
-            dist_t{d.dist_t},
             percent_value{d.percent_value}
     {
     }
     
     distribution_data::distribution_data(distribution_data&& d) noexcept :
-            enabled{std::move(d.enabled)},
-            dist_t{std::move(d.dist_t)},
+            enabled{std::move(d.enabled)}, 
             percent_value{std::move(d.percent_value)}
     {
     }
@@ -48,7 +45,6 @@ namespace data
         if(this != &d)
         {
             this->enabled = d.enabled;
-            this->dist_t = d.dist_t;
             this->percent_value = d.percent_value;
         }
         return *this;
@@ -59,19 +55,9 @@ namespace data
         if(this != &d)
         {
             this->enabled = std::move(d.enabled);
-            this->dist_t = std::move(d.dist_t);
             this->percent_value = std::move(d.percent_value);
         }
         return *this;
-    }
-    
-    std::vector<std::string> distribution_data::distribution_name() const
-    {
-        return std::vector<std::string>{
-            "none",
-            "bpercent",
-            "equally"
-        };
     }
     
     
