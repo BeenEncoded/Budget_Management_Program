@@ -31,7 +31,6 @@ namespace
     void access_alloc_money(data::money_alloc_data&, data::money_t*&);
     bool access_alloc_percentage(data::money_alloc_data&, unsigned int&);
     bool get_user_percent(data::distribution_data::percent_t&);
-    void access_alloc_money_if_on(data::money_alloc_data&, data::money_t*&);
     
     
     
@@ -67,6 +66,10 @@ namespace
         return temps;
     }
     
+    /**
+     * @brief Creates a display for scrollDisplay::window_data_class<data::money_alloc_data>
+     * with name and percentage.
+     */
     inline void create_alloc_display(const std::vector<data::money_alloc_data>& allocs, 
             std::vector<std::string>& disp)
     {
@@ -77,6 +80,9 @@ namespace
         }
     }
     
+    /**
+     * @brief Returns the remaining percentage that can be assigned in the budget.
+     */
     inline data::distribution_data::percent_t percent_left(const data::budget_data& b)
     {
         data::distribution_data::percent_t percent_alloced{0};
@@ -88,28 +94,31 @@ namespace
         return (100 - percent_alloced);
     }
     
+    /**
+     * @brief This function is used in the distribution algorithm and modifies
+     * its second argument so that it points to a.value.
+     */
     inline void access_alloc_money(data::money_alloc_data& a, data::money_t*& m)
     {
         m = (&(a.value));
     }
     
+    /**
+     * @brief This function is used in the percentage distribution algorithm and
+     * modifies its second argument to equal that of a.meta_data->dist_data.percent_value
+     * if (a.meta_data != nullptr).
+     * @return True if the data::alloc_statistics_data is not null and distribution
+     * is enabled for the allocation.
+     */
     inline bool access_alloc_percentage(data::money_alloc_data& a, unsigned int& perc)
     {
         perc = 0;
         if(a.meta_data != nullptr)
         {
             perc = a.meta_data->dist_data.percent_value;
+            return a.meta_data->dist_data.enabled;
         }
-        return true;
-    }
-    
-    inline void access_alloc_money_if_on(data::money_alloc_data& a, data::money_t*& m)
-    {
-        m = nullptr;
-        if(a.meta_data->dist_data.enabled)
-        {
-            m = (&(a.value));
-        }
+        return false;
     }
     
     /**
@@ -228,7 +237,7 @@ namespace submenu
                         if(common::prompt_user("Are you sure this is how you want to distribute your money?"))
                         {
                             modified = true;
-                            common::distribute_by_percent(b.total_money, b.allocs, access_alloc_money_if_on, access_alloc_percentage);
+                            common::distribute_by_percent(b.total_money, b.allocs, access_alloc_money, access_alloc_percentage);
                             finished = true;
                         }
                     }

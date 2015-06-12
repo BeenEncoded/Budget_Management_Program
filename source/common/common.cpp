@@ -380,7 +380,7 @@ namespace common
         using ansi::cursor::restore_pos;
         using keyboard::key_code_data;
         
-        unsigned int cursor_pos(0); //position of cursor in "inp"
+        unsigned int cursor_pos((!inp.empty() ? inp.size() : 0)); //position of cursor in "inp"
         bool finished(false), canceled(false);
         key_code_data ch;
         

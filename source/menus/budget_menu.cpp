@@ -18,6 +18,7 @@
 #include "utility/stream_operations.hpp"
 #include "submenu/move_element.hpp"
 #include "submenu/allocation_distribution_menu.hpp"
+#include "common/global/global_defines.hpp"
 
 
 /* budget_statistics_data: */
@@ -147,6 +148,7 @@ namespace
     std::string budget_statistic_display(const data::budget_data&);
     budget_statistics_data apply_allocation(data::budget_data&, const data::money_alloc_data&);
     bool sort_compare_budgets(const std::string&, const std::string&);
+    void convert_to_money(std::string&);
     
     
     /**
@@ -395,6 +397,40 @@ namespace
     }
     
     /**
+     * @brief Takes a string representing a (long double), and
+     * formats it so that it represents a data::money_t.  This was
+     * created because reading (long double) from a std::stringstream
+     * resulted in inaccuracies that modified the input of the user
+     * to an unacceptable degree.
+     * @param s The string to format.
+     */
+    inline void convert_to_money(std::string& s)
+    {
+        std::size_t pos{s.find('.')};
+        if(pos != std::string::npos)
+        {
+            if((s.size() - (pos + 1)) > 2)
+            {
+                s.insert((s.begin() + (pos + 3)), '.');
+                s.erase((s.begin() + pos));
+            }
+            else if((s.size() - (pos + 1)) == 2)
+            {
+                s.erase((s.begin() + pos));
+            }
+            else
+            {
+                s.erase((s.begin() + pos));
+                s += "0";
+            }
+        }
+        else
+        {
+            s += "00";
+        }
+    }
+    
+    /**
      * @brief Gets a monetary value from the user.
      * @param m money to modify
      * @return true if the user entered a new value.
@@ -412,11 +448,10 @@ namespace
         }while(modified && !is_valid);
         if(modified && is_valid)
         {
-            long double tempstore;
+            convert_to_money(temps);
             std::stringstream ss;
             ss<< temps;
-            ss>> tempstore;
-            m = (tempstore * 100);
+            ss>> m;
         }
         return (modified && is_valid);
     }
@@ -687,7 +722,7 @@ is permanent!"))
                         
                         case 'a':
                         {
-                            data::money_alloc_data new_allocation{"No name", (data::money_t)0};
+                            data::money_alloc_data new_allocation{"", (data::money_t)0};
                             new_allocation.id = data::new_alloc_id(b.allocs);
                             std::pair<bool, bool> temp_result{modify_allocation(b, new_allocation)};
                             if(temp_result.first && !temp_result.second)
@@ -818,7 +853,7 @@ is permanent!"))
                     {
                         case '1':
                         {
-                            std::string temps{allocation.name};
+                            std::string temps{((allocation.name == data::money_alloc_data{}.name) ? "" : allocation.name)};
                             common::cls();
                             cout<< "[ESC]: cancel"<< endl;
                             for(unsigned int x{0}; x < 11; ++x) cout<< endl;
