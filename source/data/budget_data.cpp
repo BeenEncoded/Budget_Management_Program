@@ -15,21 +15,86 @@ namespace
 {
 }
 
+//distribution_data
+namespace data
+{
+    distribution_data::distribution_data() : 
+            enabled{false},
+            dist_t{distribution_data::none},
+            percent_value{0}
+    {
+    }
+    
+    distribution_data::distribution_data(const distribution_data& d) : 
+            enabled{d.enabled},
+            dist_t{d.dist_t},
+            percent_value{d.percent_value}
+    {
+    }
+    
+    distribution_data::distribution_data(distribution_data&& d) noexcept :
+            enabled{std::move(d.enabled)},
+            dist_t{std::move(d.dist_t)},
+            percent_value{std::move(d.percent_value)}
+    {
+    }
+    
+    distribution_data::~distribution_data()
+    {
+    }
+    
+    distribution_data& distribution_data::operator=(const distribution_data& d)
+    {
+        if(this != &d)
+        {
+            this->enabled = d.enabled;
+            this->dist_t = d.dist_t;
+            this->percent_value = d.percent_value;
+        }
+        return *this;
+    }
+    
+    distribution_data& distribution_data::operator=(distribution_data&& d) noexcept
+    {
+        if(this != &d)
+        {
+            this->enabled = std::move(d.enabled);
+            this->dist_t = std::move(d.dist_t);
+            this->percent_value = std::move(d.percent_value);
+        }
+        return *this;
+    }
+    
+    std::vector<std::string> distribution_data::distribution_name() const
+    {
+        return std::vector<std::string>{
+            "none",
+            "bpercent",
+            "equally"
+        };
+    }
+    
+    
+}
+
 //alloc_statistics_data
 namespace data
 {
     alloc_statistics_data::alloc_statistics_data() : 
-            balance{0}
+            balance{0}, 
+            dist_data{}
     {
     }
     
     alloc_statistics_data::alloc_statistics_data(const alloc_statistics_data& a) : 
-            balance{a.balance}
+            balance{a.balance}, 
+            dist_data{a.dist_data}
     {
     }
     
     alloc_statistics_data::alloc_statistics_data(alloc_statistics_data&& a) noexcept :
-            balance{std::move(a.balance)}
+            balance{std::move(a.balance)}, 
+            dist_data{std::move(a.dist_data)}
     {
     }
     
@@ -42,6 +107,7 @@ namespace data
         if(this != &a)
         {
             this->balance = a.balance;
+            this->dist_data = a.dist_data;
         }
         return *this;
     }
@@ -51,6 +117,7 @@ namespace data
         if(this != &a)
         {
             this->balance = std::move(a.balance);
+            this->dist_data = std::move(a.dist_data);
         }
         return *this;
     }
@@ -366,6 +433,42 @@ namespace data
         for(std::vector<budget_data>::const_iterator it{budgets.begin()}; it != budgets.end(); ++it) ids.insert(it->id);
         while(ids.find(++new_id) != ids.end());
         return new_id;
+    }
+    
+    /**
+     * @brief Generates whatever parts of alloc_statistics_data can be generated based
+     * off of the budget.  This creates all of the alloc_statistics_data in the budget, 
+     * and updates them if they already exist.
+     * @param b The budget.
+     */
+    void generate_meta_data(budget_data& b)
+    {
+        if(b.allocs.empty()) return;
+        
+        money_t money_left{b.total_money};
+        
+        for(unsigned int x{0}; x < b.allocs.size(); ++x)
+        {
+            if(b.allocs[x].meta_data == nullptr) b.allocs[x].meta_data = new alloc_statistics_data;
+            money_left -= b.allocs[x].value;
+            b.allocs[x].meta_data->balance = money_left;
+        }
+    }
+    
+    /**
+     * @brief Deletes all of the alloc_statistics_data in the budget, freeing the
+     * memory.
+     */
+    void delete_meta_data(budget_data& b)
+    {
+        for(std::vector<money_alloc_data>::iterator it{b.allocs.begin()}; it != b.allocs.end(); ++it)
+        {
+            if(it->meta_data != nullptr)
+            {
+                delete it->meta_data;
+                it->meta_data = nullptr;
+            }
+        }
     }
     
     

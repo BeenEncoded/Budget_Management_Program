@@ -17,6 +17,7 @@
 #include "utility/filesystem.hpp"
 #include "utility/stream_operations.hpp"
 #include "submenu/move_element.hpp"
+#include "submenu/allocation_distribution_menu.hpp"
 
 
 /* budget_statistics_data: */
@@ -146,8 +147,6 @@ namespace
     std::string budget_statistic_display(const data::budget_data&);
     budget_statistics_data apply_allocation(data::budget_data&, const data::money_alloc_data&);
     bool sort_compare_budgets(const std::string&, const std::string&);
-    void update_budget_alloc_stats(data::budget_data&);
-    void clear_budget_alloc_stats(data::budget_data&);
     
     
     /**
@@ -185,9 +184,16 @@ namespace
         
         for(unsigned int x(0); x < paths.size(); ++x)
         {
-            tempbud = std::move(load_basic_info(paths[x]));
-            display.push_back(std::move((common::date_disp(tempbud.timestamp) + "   (" + 
-                    money_display(tempbud.total_money) + ")")));
+            if(fsys::is_file(paths[x]).value)
+            {
+                tempbud = std::move(load_basic_info(paths[x]));
+                display.push_back(std::move((common::date_disp(tempbud.timestamp) + "   (" + 
+                        money_display(tempbud.total_money) + ")")));
+            }
+            else
+            {
+                display.push_back("ERROR: File doesn't exist!");
+            }
         }
     }
     
@@ -396,7 +402,7 @@ namespace
     inline bool user_get_money_value(data::money_t& m)
     {
         //todo add ability to recognize and parse simple equations
-        std::string temps;
+        std::string temps{std::move(std::to_string(((long double)m / (long double)100)))};
         bool modified{false}, is_valid{false};
         
         do
@@ -474,40 +480,6 @@ namespace
         return (load_basic_info(b1).timestamp >= load_basic_info(b2).timestamp);
     }
     
-    /**
-     * @brief (re)Generates allocation statistics for each allocation.
-     */
-    inline void update_budget_alloc_stats(data::budget_data& b)
-    {
-        data::money_t money_left{b.total_money};
-        
-        for(unsigned int x{0}; x < b.allocs.size(); ++x)
-        {
-            if(b.allocs[x].meta_data == nullptr) b.allocs[x].meta_data = new data::alloc_statistics_data;
-            else
-            {
-                *(b.allocs[x].meta_data) = data::alloc_statistics_data{};
-            }
-            money_left -= b.allocs[x].value;
-            b.allocs[x].meta_data->balance = money_left;
-        }
-    }
-    
-    /**
-     * @brief Removes all allocation statistics from the budget.
-     */
-    inline void clear_budget_alloc_stats(data::budget_data& b)
-    {
-        for(std::vector<data::money_alloc_data>::iterator it{b.allocs.begin()}; it != b.allocs.end(); ++it)
-        {
-            if(it->meta_data != nullptr)
-            {
-                delete it->meta_data;
-                it->meta_data = nullptr;
-            }
-        }
-    }
-    
     
 }
 
@@ -537,9 +509,9 @@ namespace menu
             common::cls();
             cout<< endl;
             common::center("Budgets: ");
-            for(unsigned int x(0); x < 3; ++x) cout<< endl;
+            cout<< endl;
             display_window(scroll_window);
-            cout<< endl<< endl;
+            cout<< endl;
             cout<< "\'a\' -  Add new budget"<< endl;
             cout<< "\'q\' -  Quit";
             cout.flush();
@@ -560,8 +532,8 @@ namespace menu
                         if(!pdat.budget_files.empty())
                         {
                             if(common::prompt_user("Are you sure you want to delete the \
-    budget for " + common::date_disp(load_basic_info(scroll_window.selected()).timestamp) + "?  This \
-    is permanent!"))
+budget for " + common::date_disp(load_basic_info(scroll_window.selected()).timestamp) + "?  This \
+is permanent!"))
                             {
                                 if(usr_delete_file(scroll_window.selected()))
                                 {
@@ -637,27 +609,26 @@ namespace menu
         window_data_class<data::money_alloc_data> scroll_display{b.allocs, money_alloc_list_display};
         key_code_data key;
         
-        scroll_display.win().window_size() = 7;
+        scroll_display.win().window_size() = 6;
         user_input::cl();
         do
         {
-            //cur_pos distribution
-            //todo add allocation distribution algorithms: by percent, equally, and add priority distribution with both.
             common::cls();
             cout<< "Today is "<< common::date_disp(tdata::time_class{tdata::current_time()})<< endl;
             cout<< endl;
             common::center("Budget starting " + common::date_disp(b.timestamp));
-            for(unsigned int x{0}; x < 3; ++x) cout<< endl;
+            cout<< endl;
             
-            update_budget_alloc_stats(b);
+            data::generate_meta_data(b);
             scrollDisplay::display_window(scroll_display);
-            clear_budget_alloc_stats(b);
+            data::delete_meta_data(b);
             
-            cout<< endl<< endl;
+            cout<< endl;
             cout<< "Total money in this budget: "<< money_display(b.total_money)<< endl;
             cout<< endl;
             cout<< " m -  -----> Modify total money to the budget"<< endl;
             cout<< " a -  -----> Add new allocation"<< endl;
+            cout<< " d -  -----> Distribute money"<< endl;
             cout<< " [DEL] -  -> Delete selected"<< endl;
             cout<< " [ENTER] --  Modify selected"<< endl;
             cout<< " [SPCE] ---> Move Selected"<< endl;
@@ -761,19 +732,26 @@ namespace menu
                         }
                         break;
                         
+                        case 'd':
+                        {
+                            if(submenu::distribution_selection(b)) result.first = true;
+                            data::delete_meta_data(b);
+                        }
+                        break;
+                        
                         case ' ':
                         {
-                            update_budget_alloc_stats(b);
+                            data::generate_meta_data(b);
                             //note this is how I'm implementing priority: based on order of the elements.
                             if(b.allocs.size() > 1)
                             {
-                                std::function<void()> update_disp{[&b]()->void{update_budget_alloc_stats(b);}};
+                                std::function<void()> update_disp{[&b]()->void{data::generate_meta_data(b);}};
                                 if(submenu::move_vector_element(scroll_display, b.allocs, &update_disp))
                                 {
                                     result.first = true;
                                 }
                             }
-                            clear_budget_alloc_stats(b);
+                            data::delete_meta_data(b);
                         }
                         break;
                         
@@ -814,7 +792,7 @@ namespace menu
             cout<< "Money that can be allocated: "<< money_display(apply_allocation(budget, allocation).money_unallocated)<< endl;
             cout<< endl;
             common::center("Modify Budget Allocation");
-            for(unsigned int x{0}; x < 4; ++x) cout<< endl;
+            for(unsigned int x{0}; x < 3; ++x) cout<< endl;
             cout<< " 1 -  Name: \""<< allocation.name<< "\""<< endl;
             cout<< " 2 -  Value: "<< money_display(allocation.value)<< endl;
             cout<< endl;
@@ -840,13 +818,11 @@ namespace menu
                     {
                         case '1':
                         {
-                            std::string temps;
+                            std::string temps{allocation.name};
                             common::cls();
                             cout<< "[ESC]: cancel"<< endl;
-                            for(unsigned int x{0}; x < 10; ++x) cout<< endl;
-                            cout<< "Name currently set to: \""<< allocation.name<< "\""<< endl;
-                            cout<< endl;
-                            cout<< "Enter a new name: ";
+                            for(unsigned int x{0}; x < 11; ++x) cout<< endl;
+                            cout<< "Enter a name: ";
                             cout.flush();
                             if(common::get_user_str(temps))
                             {

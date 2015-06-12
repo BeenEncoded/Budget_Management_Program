@@ -384,7 +384,6 @@ namespace common
         bool finished(false), canceled(false);
         key_code_data ch;
         
-        inp.erase();
         display_ansi(save_pos());
         user_input::cl();
         do
@@ -554,14 +553,72 @@ namespace common
         for(typename std::vector<type2>::iterator it(v.begin()); it != v.end(); ++it)
         {
             access(*it, value);
+            if(value == nullptr) continue;
             (*value) = ((type1)val / (type1)v.size());
         }
-        for(unsigned int x = 0; x < ((type1)val % (type1)v.size()); ++x)
+        for(unsigned int x{0}; x < ((type1)val % (type1)v.size()); ++x)
         {
             access(v[x], value);
+            if(value == nullptr) continue;
             ++(*value);
         }
     }
+    
+    template void distribute_equally<data::money_t, data::money_alloc_data>(
+            const data::money_t&,
+            std::vector<data::money_alloc_data>&,
+            void (*)(data::money_alloc_data&, data::money_t*&));
+    
+    /**
+     * @brief Distributes an amount of money accross a list of values based on
+     * a percentage assigned to each element in the list.
+     * @param val The total amount of money to be distributed.
+     * @param v A list of objects.
+     * @param access a function that accesses the value from an element in the
+     * vector.  Provided for compatibility with objects.
+     * @param percent access the element's percentage.  Returns true if
+     * percentage is being used for that element.
+     */
+    template<typename type1, typename type2>
+    void distribute_by_percent(const type1& val, std::vector<type2>& v, 
+            void (*access)(type2&, type1*&),
+            bool (*percent)(type2&, unsigned int&))
+    {
+        if((val > 0) && !v.empty())
+        {
+            type1 value_left{val}, *loc{nullptr};
+            unsigned int percent_alloc{0};
+            
+            for(unsigned int x{0}; x < v.size(); ++x)
+            {
+                access(v[x], loc);
+                if(loc == nullptr) continue;
+                if(percent(v[x], percent_alloc))
+                {
+                    if(((val / 100) * percent_alloc) <= value_left)
+                    {
+                        (*loc) = ((val / 100) * percent_alloc);
+                        value_left -= (*loc);
+                    }
+                    else
+                    {
+                        (*loc) = value_left;
+                        value_left = 0;
+                    }
+                }
+                else
+                {
+                    value_left -= (*loc);
+                }
+            }
+        }
+    }
+    
+    template void distribute_by_percent<data::money_t, data::money_alloc_data>(
+            const data::money_t&,
+            std::vector<data::money_alloc_data>&,
+            void (*)(data::money_alloc_data&, data::money_t*&),
+            bool (*)(data::money_alloc_data&, unsigned int&));
     
     /**
      * @brief Returns the number of bytes the current position is from

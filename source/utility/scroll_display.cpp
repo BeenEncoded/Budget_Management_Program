@@ -663,12 +663,16 @@ namespace scrollDisplay
             std::vector<std::string> disp(std::move(scroll_window->window()));
             bool is_selected(false), is_special_selected(false);
             
-            if(scroll_window->gpos().whole >= scroll_window->window_size())
+            if(e_before > 0)
             {
                 cout<< std::string(((win_width / 2) - (std::to_string(e_before).size() / 2)), ' ')<< e_before<< endl;
                 cout<< std::string(win_width, '^')<< endl;
             }
-            else cout<< std::string(70, '-')<< endl;
+            else
+            {
+                cout<< endl;
+                cout<< std::string(70, '-')<< endl;
+            }
             for(unsigned int x(0); x < disp.size(); ++x)
             {
                 is_special_selected = (spec_selected.find((x + scroll_window->window_beg())) != spec_selected.end());
@@ -684,8 +688,7 @@ namespace scrollDisplay
                 cout<< (is_selected ? bracket_char.second : ' ');
                 if(is_special_selected) cout<< spec_bracket_char.second;
                 
-                if(x < (disp.size() - 1)) cout<< endl;
-                else cout.flush();
+                cout<< endl;
             }
             //to create a constant sized boundry, write a number of newlines if the display isn't full:
             for(unsigned int x(0); x < (scroll_window->window_size() - disp.size()); ++x)
@@ -697,7 +700,11 @@ namespace scrollDisplay
                 cout<< std::string(70, 'V')<< endl;
                 cout<< std::string(((70 / 2) - (std::to_string(e_after).size() / 2)), ' ')<< e_after;
             }
-            else cout<< std::string(70, '-');
+            else
+            {
+                cout<< std::string(70, '-');
+                cout<< endl;
+            }
             cout.flush();
         }
     }

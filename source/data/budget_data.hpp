@@ -13,6 +13,7 @@ namespace data
     typedef struct money_alloc_data money_alloc_data;
     typedef struct budget_data budget_data;
     typedef struct alloc_statistics_data alloc_statistics_data;
+    typedef struct distribution_data distribution_data;
     
     std::istream& operator>>(std::istream&, money_alloc_data&);
     std::ostream& operator<<(std::ostream&, const money_alloc_data&);
@@ -26,6 +27,44 @@ namespace data
     std::istream& operator>>(std::istream&, std::vector<budget_data>&);
     std::ostream& operator<<(std::ostream&, const std::vector<budget_data>&);
     
+    void generate_meta_data(budget_data&);
+    void delete_meta_data(budget_data&);
+    
+    
+    /**
+     * @class distrubution_data
+     * @author Jonathan Whitlock
+     * @date 06/10/2015
+     * @file budget_data.hpp
+     * @brief Used for the storage of data regarding budget money distribution
+     * for each allocation.
+     */
+    typedef struct distribution_data
+    {
+        typedef short percent_t;
+        
+        enum distribution_type
+        {
+            none = 0,
+            bpercent,
+            equally
+        };
+        
+        explicit distribution_data();
+        distribution_data(const distribution_data&);
+        distribution_data(distribution_data&&) noexcept;
+        
+        ~distribution_data();
+        
+        distribution_data& operator=(const distribution_data&);
+        distribution_data& operator=(distribution_data&&) noexcept;
+        
+        std::vector<std::string> distribution_name() const;
+        
+        bool enabled;
+        distribution_type dist_t; //todo remove this
+        percent_t percent_value;
+    } distribution_data;
     
     /**
      * @class alloc_statistics_data
@@ -49,6 +88,7 @@ namespace data
         alloc_statistics_data& operator=(alloc_statistics_data&&) noexcept;
         
         money_t balance;
+        distribution_data dist_data;
     } alloc_statistics_data;
     
     /**
