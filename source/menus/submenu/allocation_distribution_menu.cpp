@@ -85,13 +85,20 @@ namespace
      */
     inline data::distribution_data::percent_t percent_left(const data::budget_data& b)
     {
-        data::distribution_data::percent_t percent_alloced{0};
+        data::money_t money{0};
         
         for(std::vector<data::money_alloc_data>::const_iterator it{b.allocs.begin()}; it != b.allocs.end(); ++it)
         {
-            percent_alloced += it->meta_data->dist_data.percent_value;
+            if(it->meta_data->dist_data.enabled)
+            {
+                money += ((b.total_money / 100) * it->meta_data->dist_data.percent_value);
+            }
+            else
+            {
+                money += it->value;
+            }
         }
-        return (100 - percent_alloced);
+        return (100 - (data::distribution_data::percent_t)(((long double)money / b.total_money) * (long double)100));
     }
     
     /**
