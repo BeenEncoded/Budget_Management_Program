@@ -179,14 +179,14 @@ namespace submenu
         bool finished{false}, canceled{false}, modified{false};
         key_code_data key;
         
-        display.win().window_size() = 8;
+        display.win().window_size() = 6;
         user_input::cl();
         do
         {
             common::cls();
             cout<< endl;
             common::center("Distribution by Percentage:");
-            for(unsigned int x{0}; x < 4; ++x) cout<< endl;
+            for(unsigned int x{0}; x < 2; ++x) cout<< endl;
             display_window(display);
             cout<< endl<< endl;
             cout<< "Percentage left: %"<< percent_left(b)<< endl<< endl<< endl;

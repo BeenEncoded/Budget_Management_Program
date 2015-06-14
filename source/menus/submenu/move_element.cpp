@@ -76,7 +76,7 @@ namespace submenu
             common::cls();
             cout<< endl;
             common::center("Move Selection:");
-            for(unsigned int x{0}; x < 4; ++x) cout<< endl;
+            for(unsigned int x{0}; x < 3; ++x) cout<< endl;
             display_window(window, std::pair<char, char>{'>', '<'});
             
             key = std::move(user_input::getch_funct());
