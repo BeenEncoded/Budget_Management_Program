@@ -28,4 +28,6 @@ You can replace "todo" with "note", "attn", "test", or "bug" to find anything el
 Please keep those updated if you change anything that they refer to.  
 
 **Communication:**
-If you find a bug, please feel free to submit a pull request with the resolution, or create an issue.  If you have decided to contribute and take on one of the many todos, please open an issue and assign it to yourself so that I know you're working on it.
+If you find a bug, please feel free to submit a pull request with the resolution, or create an issue.  If you have decided to contribute and take on one of the many todos, please open an issue and assign it to yourself so that I know you're working on it.  
+
+**RELEASES:** Release versions are in the release branch.  Whenever I feel like the changes in developement are stable enough, and the program's developement is at a good point, I'll run the unit tests, run cppcheck, run Valgrind to test its memory, and finally look over the code.  After a day or two of making sure everything is just right, I'll merge the changes in the developement branch into the release branch with '--squash' so that the two histories remain seperate.  This is done to keep developement and releases seperate from one another, as well as to make it easier to track the changes of each release.
