@@ -271,34 +271,38 @@ namespace data
 namespace data
 {
     budget_data::budget_data(const budget_data& b) noexcept :
-            total_money(b.total_money),
-            allocs(b.allocs),
-            timestamp(b.timestamp),
-            id(b.id)
+            total_money{b.total_money}, 
+            allocs{b.allocs}, 
+            timestamp{b.timestamp}, 
+            id{b.id},  
+            time_span{b.time_span}
     {
     }
     
     budget_data::budget_data(budget_data&& b) noexcept : 
-            total_money(std::move(b.total_money)),
-            allocs(std::move(b.allocs)),
-            timestamp(std::move(b.timestamp)),
-            id(std::move(b.id))
+            total_money{std::move(b.total_money)}, 
+            allocs{std::move(b.allocs)}, 
+            timestamp{std::move(b.timestamp)}, 
+            id{std::move(b.id)}, 
+            time_span{std::move(b.time_span)}
     {
     }
     
     budget_data::budget_data(const money_t& m) noexcept : 
-            total_money(m),
-            allocs(),
-            timestamp(tdata::current_time()),
-            id(0)
+            total_money{m}, 
+            allocs{},
+            timestamp{tdata::current_time()}, 
+            id{0}, 
+            time_span{0, budget_data::timespan_interval_type::day}
     {
     }
     
     budget_data::budget_data() noexcept :
-            total_money(0),
-            allocs(),
-            timestamp(tdata::current_time()),
-            id(0)
+            total_money{0}, 
+            allocs{},
+            timestamp{tdata::current_time()}, 
+            id{0}, 
+            time_span{0, budget_data::timespan_interval_type::day}
     {
     }
     
@@ -314,16 +318,21 @@ namespace data
             this->allocs = b.allocs;
             this->timestamp = b.timestamp;
             this->id = b.id;
+            this->time_span = b.time_span;
         }
         return *this;
     }
     
     budget_data& budget_data::operator=(budget_data&& b) noexcept
     {
-        this->allocs = std::move(b.allocs);
-        this->timestamp = std::move(b.timestamp);
-        this->total_money = std::move(b.total_money);
-        this->id = std::move(b.id);
+        if(this != &b)
+        {
+            this->allocs = std::move(b.allocs);
+            this->timestamp = std::move(b.timestamp);
+            this->total_money = std::move(b.total_money);
+            this->id = std::move(b.id);
+            this->time_span = std::move(b.time_span);
+        }
         return *this;
     }
     
@@ -332,7 +341,8 @@ namespace data
         return ((this->total_money == b.total_money) && 
                 (this->allocs == b.allocs) && 
                 (this->timestamp == b.timestamp) && 
-                (this->id == b.id));
+                (this->id == b.id) && 
+                (this->time_span == b.time_span));
     }
     
     bool budget_data::operator!=(const budget_data& b) const noexcept
@@ -340,7 +350,8 @@ namespace data
         return ((this->allocs != b.allocs) || 
                 (this->total_money != b.total_money) || 
                 (this->timestamp != b.timestamp) ||
-                (this->id != b.id));
+                (this->id != b.id) ||
+                (this->time_span != b.time_span));
     }
     
     std::ostream& operator<<(std::ostream& out, const budget_data& b)
@@ -351,6 +362,8 @@ namespace data
         {
             out_mem<money_t>(out, b.total_money);
             out_mem<budget_data::ID_T>(out, b.id);
+            out_mem<unsigned int>(out, b.time_span.first);
+            out_mem<unsigned int>(out, (unsigned int)b.time_span.second);
             if(out.good()) out<< b.timestamp;
             if(out.good()) out<< b.allocs;
         }
@@ -374,6 +387,13 @@ namespace data
         {
             if(in.good()) in_mem<money_t>(in, b.total_money);
             if(in.good()) in_mem<budget_data::ID_T>(in, b.id);
+            if(in.good()) in_mem<unsigned int>(in, b.time_span.first);
+            if(in.good())
+            {
+                unsigned int tempi;
+                in_mem<unsigned int>(in, tempi);
+                b.time_span.second = (budget_data::timespan_interval_type)tempi;
+            }
             if(in.good()) in>> b.timestamp;
             if(in.good()) in>> b.allocs;
         }
@@ -455,6 +475,55 @@ namespace data
                 it->meta_data = nullptr;
             }
         }
+    }
+    
+    tdata::time_class calc_end_date(const budget_data& b)
+    {
+        tdata::time_class end_date{b.timestamp};
+        
+        if(b.time_span.second == budget_data::timespan_interval_type::month)
+        {
+            int temp_month;
+            for(unsigned int x{0}; x < b.time_span.first; ++x)
+            {
+                temp_month = end_date.month();
+                while(end_date.month() == temp_month) end_date += tdata::t_const::day;
+            }
+        }
+        else if(b.time_span.second == budget_data::timespan_interval_type::year)
+        {
+            for(unsigned int x{0}; x < b.time_span.first; ++x) end_date.syear(end_date.gyear() + 1);
+        }
+        else
+        {
+            long count{0};
+            switch(b.time_span.second)
+            {
+                case budget_data::timespan_interval_type::day:
+                {
+                    count = tdata::t_const::day;
+                }
+                break;
+                
+                case budget_data::timespan_interval_type::week:
+                {
+                    count = tdata::t_const::week;
+                }
+                break;
+                
+                default:
+                {
+                    ethrow("In tdata::time_class calc_end_date(const budget_da\
+ta&): Invalid data::budget_data::timespan_interval_type");
+                }
+                break;
+            }
+            for(unsigned long long int x{0}; x < b.time_span.first; ++x)
+            {
+                end_date += count;
+            }
+        }
+        return end_date;
     }
     
     

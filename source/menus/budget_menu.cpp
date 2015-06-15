@@ -168,6 +168,13 @@ namespace
             std::ifstream in{path.c_str(), std::ios::in};
             if(in.good()) in_mem(in, tempbud.total_money);
             if(in.good()) in_mem(in, tempbud.id);
+            if(in.good()) in_mem<unsigned int>(in, tempbud.time_span.first);
+            if(in.good())
+            {
+                unsigned int tempi;
+                in_mem<unsigned int>(in, tempi);
+                tempbud.time_span.second = (data::budget_data::timespan_interval_type)tempi;
+            }
             if(in.good()) in>> tempbud.timestamp;
             if(in.is_open()) in.close();
         }

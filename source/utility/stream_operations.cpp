@@ -114,6 +114,7 @@ namespace utility
     template std::istream& in_mem(std::istream&, unsigned long long&);
     template std::istream& in_mem(std::istream&, long long&);
     template std::istream& in_mem(std::istream&, std::size_t&);
+    template std::istream& in_mem<unsigned int>(std::istream&, unsigned int&);
     
     template<typename type>
     std::ostream& out_mem(std::ostream& out, const type& t)
@@ -137,6 +138,7 @@ namespace utility
     template std::ostream& out_mem(std::ostream&, const unsigned long long&);
     template std::ostream& out_mem(std::ostream&, const long long&);
     template std::ostream& out_mem(std::ostream&, const std::size_t&);
+    template std::ostream& out_mem<unsigned int>(std::ostream&, const unsigned int&);
     
     /**
      * @brief Writes a vector of type 'type' to a stream.  Garunteed not to

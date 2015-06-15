@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <iostream>
+#include <utility>
 
 #include "utility/time_class.hpp"
 
@@ -121,6 +122,14 @@ namespace data
     {
         typedef unsigned long long ID_T;
         
+        enum timespan_interval_type
+        {
+            day = 0,
+            week,
+            month,
+            year
+        };
+        
         budget_data(const budget_data&) noexcept;
         budget_data(budget_data&&) noexcept;
         explicit budget_data() noexcept;
@@ -137,11 +146,12 @@ namespace data
         std::vector<money_alloc_data> allocs;
         tdata::time_class timestamp;
         ID_T id;
-        //todo add length of time a budget spans
+        std::pair<unsigned int, timespan_interval_type> time_span;
     } budget_data;
     
     money_alloc_data::ID_T new_alloc_id(const std::vector<money_alloc_data>&);
     budget_data::ID_T new_budget_id(const std::vector<budget_data>&);
+    tdata::time_class calc_end_date(const budget_data&);
     
     
 }
