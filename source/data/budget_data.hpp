@@ -122,6 +122,8 @@ namespace data
     {
         typedef unsigned long long ID_T;
         
+        static constexpr unsigned int timespan_max{4};
+        
         enum timespan_interval_type
         {
             day = 0,
@@ -144,14 +146,13 @@ namespace data
         
         money_t total_money;
         std::vector<money_alloc_data> allocs;
+        //todo replace timestamp with time_frame
         tdata::time_class timestamp;
         ID_T id;
-        std::pair<unsigned int, timespan_interval_type> time_span;
     } budget_data;
     
     money_alloc_data::ID_T new_alloc_id(const std::vector<money_alloc_data>&);
     budget_data::ID_T new_budget_id(const std::vector<budget_data>&);
-    tdata::time_class calc_end_date(const budget_data&);
     
     
 }

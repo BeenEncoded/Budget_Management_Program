@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <functional>
 #include <fstream>
+#include <limits>
 
 #include "budget_menu.hpp"
 #include "utility/scroll_display.hpp"
@@ -168,13 +169,6 @@ namespace
             std::ifstream in{path.c_str(), std::ios::in};
             if(in.good()) in_mem(in, tempbud.total_money);
             if(in.good()) in_mem(in, tempbud.id);
-            if(in.good()) in_mem<unsigned int>(in, tempbud.time_span.first);
-            if(in.good())
-            {
-                unsigned int tempi;
-                in_mem<unsigned int>(in, tempi);
-                tempbud.time_span.second = (data::budget_data::timespan_interval_type)tempi;
-            }
             if(in.good()) in>> tempbud.timestamp;
             if(in.is_open()) in.close();
         }
@@ -651,7 +645,7 @@ is permanent!"))
         window_data_class<data::money_alloc_data> scroll_display{b.allocs, money_alloc_list_display};
         key_code_data key;
         
-        scroll_display.win().window_size() = 6;
+        scroll_display.win().window_size() = 7;
         user_input::cl();
         do
         {
@@ -671,8 +665,6 @@ is permanent!"))
             cout<< " m -------> Modify total money to the budget"<< endl;
             cout<< " a -------> Add new allocation"<< endl;
             cout<< " d -------> Distribute money"<< endl;
-            cout<< " [DEL] ---> Delete selected"<< endl;
-            cout<< " [ENTER] -> Modify selected"<< endl;
             cout<< " [SPCE] --> Move Selected"<< endl;
             cout<< " s -------> Statistics"<< endl;
             cout<< endl;

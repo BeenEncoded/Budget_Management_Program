@@ -7,6 +7,7 @@
 #include "common/global/global_defines.hpp"
 #include "common_test_util.hpp"
 #include "data/budget_data.hpp"
+#include "data/time_frame.hpp"
 
 namespace
 {
@@ -90,6 +91,7 @@ namespace test
         
         template data::budget_data read_from_stream<data::budget_data>(const data::budget_data&);
         template std::vector<data::budget_data> read_from_stream<std::vector<data::budget_data> >(const std::vector<data::budget_data>&);
+        template tdata::timeframe_class read_from_stream<tdata::timeframe_class>(const tdata::timeframe_class&);
         
         
     }
