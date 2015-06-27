@@ -5,7 +5,7 @@
 #include <iostream>
 #include <utility>
 
-#include "utility/time_class.hpp"
+#include "utility/time_frame.hpp"
 
 namespace data
 {
@@ -122,16 +122,6 @@ namespace data
     {
         typedef unsigned long long ID_T;
         
-        static constexpr unsigned int timespan_max{4};
-        
-        enum timespan_interval_type
-        {
-            day = 0,
-            week,
-            month,
-            year
-        };
-        
         budget_data(const budget_data&) noexcept;
         budget_data(budget_data&&) noexcept;
         explicit budget_data() noexcept;
@@ -146,8 +136,7 @@ namespace data
         
         money_t total_money;
         std::vector<money_alloc_data> allocs;
-        //todo replace timestamp with time_frame
-        tdata::time_class timestamp;
+        tdata::timeframe_class timeframe;
         ID_T id;
     } budget_data;
     

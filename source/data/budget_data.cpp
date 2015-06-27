@@ -274,7 +274,7 @@ namespace data
     budget_data::budget_data(const budget_data& b) noexcept :
             total_money{b.total_money}, 
             allocs{b.allocs}, 
-            timestamp{b.timestamp}, 
+            timeframe{b.timeframe}, 
             id{b.id}
     {
     }
@@ -282,7 +282,7 @@ namespace data
     budget_data::budget_data(budget_data&& b) noexcept : 
             total_money{std::move(b.total_money)}, 
             allocs{std::move(b.allocs)}, 
-            timestamp{std::move(b.timestamp)}, 
+            timeframe{std::move(b.timeframe)}, 
             id{std::move(b.id)}
     {
     }
@@ -290,7 +290,7 @@ namespace data
     budget_data::budget_data(const money_t& m) noexcept : 
             total_money{m}, 
             allocs{},
-            timestamp{tdata::current_time()}, 
+            timeframe{tdata::time_class{tdata::current_time()}, tdata::time_interval_type{}}, 
             id{0}
     {
     }
@@ -298,7 +298,7 @@ namespace data
     budget_data::budget_data() noexcept :
             total_money{0}, 
             allocs{},
-            timestamp{tdata::current_time()}, 
+            timeframe{tdata::time_class{tdata::current_time()}, tdata::time_interval_type{}}, 
             id{0}
     {
     }
@@ -313,7 +313,7 @@ namespace data
         {
             this->total_money = b.total_money;
             this->allocs = b.allocs;
-            this->timestamp = b.timestamp;
+            this->timeframe = b.timeframe;
             this->id = b.id;
         }
         return *this;
@@ -324,7 +324,7 @@ namespace data
         if(this != &b)
         {
             this->allocs = std::move(b.allocs);
-            this->timestamp = std::move(b.timestamp);
+            this->timeframe = std::move(b.timeframe);
             this->total_money = std::move(b.total_money);
             this->id = std::move(b.id);
         }
@@ -335,7 +335,7 @@ namespace data
     {
         return ((this->total_money == b.total_money) && 
                 (this->allocs == b.allocs) && 
-                (this->timestamp == b.timestamp) && 
+                (this->timeframe == b.timeframe) && 
                 (this->id == b.id));
     }
     
@@ -343,7 +343,7 @@ namespace data
     {
         return ((this->allocs != b.allocs) || 
                 (this->total_money != b.total_money) || 
-                (this->timestamp != b.timestamp) ||
+                (this->timeframe != b.timeframe) ||
                 (this->id != b.id));
     }
     
@@ -355,7 +355,7 @@ namespace data
         {
             out_mem<money_t>(out, b.total_money);
             out_mem<budget_data::ID_T>(out, b.id);
-            if(out.good()) out<< b.timestamp;
+            if(out.good()) out<< b.timeframe;
             if(out.good()) out<< b.allocs;
         }
         return out;
@@ -378,7 +378,7 @@ namespace data
         {
             if(in.good()) in_mem<money_t>(in, b.total_money);
             if(in.good()) in_mem<budget_data::ID_T>(in, b.id);
-            if(in.good()) in>> b.timestamp;
+            if(in.good()) in>> b.timeframe;
             if(in.good()) in>> b.allocs;
         }
         return in;

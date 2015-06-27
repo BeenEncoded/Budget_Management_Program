@@ -7,7 +7,7 @@
 #include "common/global/global_defines.hpp"
 #include "common_test_util.hpp"
 #include "data/budget_data.hpp"
-#include "data/time_frame.hpp"
+#include "utility/time_frame.hpp"
 
 namespace
 {

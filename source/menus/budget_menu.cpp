@@ -169,7 +169,7 @@ namespace
             std::ifstream in{path.c_str(), std::ios::in};
             if(in.good()) in_mem(in, tempbud.total_money);
             if(in.good()) in_mem(in, tempbud.id);
-            if(in.good()) in>> tempbud.timestamp;
+            if(in.good()) in>> tempbud.timeframe;
             if(in.is_open()) in.close();
         }
         return tempbud;
@@ -190,7 +190,7 @@ namespace
             if(fsys::is_file(paths[x]).value)
             {
                 tempbud = std::move(load_basic_info(paths[x]));
-                display.push_back(std::move((common::date_disp(tempbud.timestamp) + "   (" + 
+                display.push_back(std::move((common::date_disp(tempbud.timeframe.beg) + "   (" + 
                         money_display(tempbud.total_money) + ")")));
             }
             else
@@ -299,18 +299,17 @@ namespace
         
         do
         {
-            canceled = !common::user_choose_date(b.timestamp);
+            canceled = !common::user_choose_date(b.timeframe.beg);
             date_valid = !canceled;
             for(std::vector<data::budget_data>::const_iterator it{buds.begin()}; ((it != buds.end()) && date_valid); ++it)
             {
-                if((b.timestamp.gyear() == it->timestamp.gyear()) && 
-                        (b.timestamp.month() == it->timestamp.month()) && (it->timestamp.mday() == b.timestamp.mday()))
+                if((b.timeframe.beg.gyear() == it->timeframe.beg.gyear()) && 
+                        (b.timeframe.beg.month() == it->timeframe.beg.month()) && (it->timeframe.beg.mday() == b.timeframe.beg.mday()))
                 {
                     date_valid = false;
                     common::cls();
                     for(unsigned int x{0}; x < v_center::value; ++x) std::cout<< std::endl;
                     common::center("You can not create a budget for the same day as another budget!");
-                    std::cout.flush();
                     common::wait();
                     common::cls();
                 }
@@ -331,7 +330,7 @@ namespace
         bool budget_created{false};
         
         tempb.id = std::move(data::new_budget_id(load_basic_info_all(pdata)));
-        tempb.timestamp = tdata::current_time();
+        tempb.timeframe.beg = tdata::current_time();
         if(!choose_budget_date(pdata, tempb)) return budget_created;
         temp_result = std::move(menu::modify_budget(tempb));
         if(temp_result.first && !temp_result.second) //modified, but not canceled
@@ -464,7 +463,7 @@ namespace
      */
     inline std::string budget_statistic_display(const data::budget_data& budget)
     {
-        std::string temps{"Budget for date: " + common::date_disp(budget.timestamp) + "\n\n"};
+        std::string temps{"Budget for date: " + common::date_disp(budget.timeframe.beg) + "\n\n"};
         budget_statistics_data stats{budget};
         
         temps += ("Total money in the budget: " + money_display(budget.total_money) + "\n");
@@ -513,7 +512,7 @@ namespace
      */
     inline bool sort_compare_budgets(const std::string& b1, const std::string& b2)
     {
-        return (load_basic_info(b1).timestamp >= load_basic_info(b2).timestamp);
+        return (load_basic_info(b1).timeframe.beg >= load_basic_info(b2).timeframe.beg);
     }
     
     
@@ -568,7 +567,7 @@ namespace menu
                         if(!pdat.budget_files.empty())
                         {
                             if(common::prompt_user("Are you sure you want to delete the \
-budget for " + common::date_disp(load_basic_info(scroll_window.selected()).timestamp) + "?  This \
+budget for " + common::date_disp(load_basic_info(scroll_window.selected()).timeframe.beg) + "?  This \
 is permanent!"))
                             {
                                 if(usr_delete_file(scroll_window.selected()))
@@ -652,7 +651,7 @@ is permanent!"))
             common::cls();
             cout<< "Today is "<< common::date_disp(tdata::time_class{tdata::current_time()})<< endl;
             cout<< endl;
-            common::center("Budget starting " + common::date_disp(b.timestamp));
+            common::center("Budget starting " + common::date_disp(b.timeframe.beg));
             cout<< endl;
             
             data::generate_meta_data(b);

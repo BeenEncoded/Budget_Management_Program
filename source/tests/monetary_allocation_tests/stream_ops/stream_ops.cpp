@@ -84,7 +84,7 @@ namespace
      */
     inline std::string budget_display(const data::budget_data& b)
     {
-        std::string disp("[$" + std::to_string(b.total_money) + " :: " + time_to_string(b.timestamp) + " :: ");
+        std::string disp("[$" + std::to_string(b.total_money) + " :: " + time_to_string(b.timeframe.beg) + " :: ");
                 
         disp += "\n\t{\n";
         for(unsigned int x(0); x < b.allocs.size(); ++x) disp += ("\t\t" + alloc_display(b.allocs[x]) + "\n");

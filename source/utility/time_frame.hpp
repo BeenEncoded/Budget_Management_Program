@@ -83,6 +83,7 @@ namespace tdata
         explicit timeframe_class();
         explicit timeframe_class(const unsigned int&, const time_interval_type::unit_t&);
         explicit timeframe_class(const time_interval_type&);
+        explicit timeframe_class(const time_class&, const time_interval_type&);
         timeframe_class(const timeframe_class&);
         timeframe_class(timeframe_class&&) noexcept;
         ~timeframe_class();

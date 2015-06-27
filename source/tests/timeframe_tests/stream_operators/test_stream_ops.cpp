@@ -5,7 +5,7 @@
 #include <utility>
 
 #include "test_stream_ops.hpp"
-#include "data/time_frame.hpp"
+#include "utility/time_frame.hpp"
 #include "tests/common_test_util.hpp"
 
 namespace

@@ -297,6 +297,12 @@ namespace tdata
     {
     }
     
+    timeframe_class::timeframe_class(const time_class& t, const time_interval_type& i) : 
+            beg{t},
+            interval{i}
+    {
+    }
+    
     timeframe_class::timeframe_class(const unsigned int& d, const time_interval_type::unit_t& u) : 
             beg{current_time()},
             interval{d, u}
@@ -418,6 +424,7 @@ namespace tdata
     //timeframe_class
     std::istream& operator>>(std::istream& in, timeframe_class& t)
     {
+        t = std::move(timeframe_class{});
         in.peek();
         if(in.good()) in>> t.beg;
         if(in.good()) in>> t.interval;
