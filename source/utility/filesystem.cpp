@@ -9,7 +9,6 @@
 
 #include <stdexcept>
 #include <exception>
-#include <string>
 
 #endif
 #endif
@@ -52,6 +51,7 @@ namespace
     fsys::result_data_boolean is_empty(const std::string&);
     std::pair<std::string, std::string> split_subdir(const std::string&, const std::string&);
     std::string dive(const unsigned int&, const std::string&);
+    bool path_has_perms(const std::string&, const boost::filesystem::perms&);
     
     
 #if FILESYSTEM_USE_RUNTIME_ERRORS == true
@@ -452,6 +452,21 @@ namespace
 unknown error occured!";
         }
         return res;
+    }
+    
+    inline bool path_has_perms(const std::string& s, const boost::filesystem::perms& p)
+    {
+        if(boost_bool_funct(boost::filesystem::exists, s).value)
+        {
+            using boost::filesystem::file_status;
+            using boost::system::error_code;
+            
+            error_code ec;
+            file_status status{boost::filesystem::status(boost::filesystem::path{s}, ec)};
+            if(is_error(ec)) ethrow(ec.message());
+            return ((status.permissions() & p) == p);
+        }
+        return false;
     }
     
     
@@ -1437,4 +1452,39 @@ ation failed!");
     }
     
     
+}
+
+namespace fsys
+{
+    namespace permission
+    {
+        namespace owner
+        {
+            bool can_read(const std::string& s)
+            {
+                using namespace boost::filesystem;
+                return path_has_perms(s, owner_read);
+            }
+            
+            bool can_write(const std::string& s)
+            {
+                using namespace boost::filesystem;
+                return path_has_perms(s, owner_write);
+            }
+            
+            bool can_execute(const std::string& s)
+            {
+                using namespace boost::filesystem;
+                return path_has_perms(s, owner_exe);
+            }
+            
+            bool all_perms(const std::string& s)
+            {
+                using namespace boost::filesystem;
+                return path_has_perms(s, owner_all);
+            }
+            
+            
+        }
+    }
 }

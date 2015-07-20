@@ -146,4 +146,14 @@ namespace data
     
 }
 
+
+/* Program-specific functions that require additional dependencies: */
+#include "common/global/program_data.hpp"
+
+namespace data
+{
+    std::string budget_path(const global::program_data&, const budget_data&);
+    
+}
+
 #endif

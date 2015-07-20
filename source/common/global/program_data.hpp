@@ -9,7 +9,7 @@ namespace global
     
     std::vector<std::string> budget_paths(const std::string&);
     
-    constexpr char const* budget_file_extension{".bud"};
+    constexpr const char* const budget_file_extension{".bud"};
     
     typedef struct program_data
     {

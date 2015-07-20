@@ -464,3 +464,14 @@ namespace data
     
 }
 
+namespace data
+{
+    std::string budget_path(const global::program_data& pdata, const budget_data& b)
+    {
+        return (pdata.budget_folder + fsys::pref_slash() + std::to_string(b.id) + 
+                std::string{global::budget_file_extension});
+    }
+    
+    
+}
+

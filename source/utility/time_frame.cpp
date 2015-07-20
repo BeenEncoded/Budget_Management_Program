@@ -120,7 +120,7 @@ Constructor called with invalid unit_type!"};
         if(this != &t)
         {
             this->u = std::move(t.u);
-            this->count = std::move(t.u);
+            this->count = std::move(t.count);
         }
         return *this;
     }
@@ -143,18 +143,7 @@ Constructor called with invalid unit_type!"};
      */
     std::string time_interval_type::unit_name() const
     {
-        switch(this->u)
-        {
-            case unit_t::day: return "day";
-            case unit_t::week: return "week";
-            case unit_t::month: return "month";
-            case unit_t::year: return "year";
-            
-            default: break;
-        }
-        throw std::runtime_error{"\n\n" + CODE_LOCATION + "\nIn function \
-std::string time_interval_type::unit_name() const:\n Unit type does not exist!!"};
-        return "";
+        return tdata::time_interval_type::unit_names()[this->u].second;
     }
     
     /**
@@ -249,7 +238,7 @@ Algorithm failed!"};
             if(temp_length == 0) temp_length = t_const::week;
             for(decltype(this->count) x{0}; x < this->count; ++x)
             {
-                if(sub) end_time += temp_length;
+                if(!sub) end_time += temp_length;
                 else end_time -= temp_length;
             }
             break;
@@ -258,7 +247,7 @@ Algorithm failed!"};
             {
                 for(decltype(this->count) x{0}; x < this->count; ++x)
                 {
-                    if(sub) this->add_month(end_time);
+                    if(!sub) this->add_month(end_time);
                     else this->sub_month(end_time);
                 }
             }
@@ -268,7 +257,7 @@ Algorithm failed!"};
             {
                 for(decltype(this->count) x{0}; x < this->count; ++x)
                 {
-                    if(sub) this->add_year(end_time);
+                    if(!sub) this->add_year(end_time);
                     else this->sub_year(end_time);
                 }
             }
@@ -283,6 +272,20 @@ tdata::time_interval_type::unit_t value passed!"};
             break;
         }
         return end_time;
+    }
+    
+    /**
+     * @brief Returns a vector whose elements' indices are equivilant to
+     * the unit_t that the names stored at the vector's respective indices refer to.
+     * used for menu and display purposes. */
+    std::vector<std::pair<time_interval_type::unit_t, std::string> > time_interval_type::unit_names()
+    {
+        return std::vector<std::pair<unit_t, std::string> >{
+            std::pair<unit_t, std::string>{unit_t::day, "day"},
+            std::pair<unit_t, std::string>{unit_t::week, "week"},
+            std::pair<unit_t, std::string>{unit_t::month, "month"},
+            std::pair<unit_t, std::string>{unit_t::year, "year"}
+        };
     }
     
     

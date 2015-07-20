@@ -44,6 +44,17 @@ namespace fsys
     result_data_boolean is_symlink(const std::string&);
     result_data_boolean copy_folders(const std::string&, const std::string&, const std::string&);
     
+    namespace permission
+    {
+        namespace owner
+        {
+            bool can_read(const std::string&);
+            bool can_write(const std::string&);
+            bool can_execute(const std::string&);
+            bool all_perms(const std::string&);
+        }
+    }
+    
     /* Returns a string that represents a group of characters that should
      never appear in a filename on Windows. */
     inline std::string windows_bad_filename_chars()

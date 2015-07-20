@@ -20,6 +20,8 @@
 #include "submenu/move_element.hpp"
 #include "submenu/allocation_distribution_menu.hpp"
 #include "common/global/global_defines.hpp"
+#include "submenu/modify_timeframe.hpp"
+#include "utility/time_frame.hpp"
 
 
 /* budget_statistics_data: */
@@ -34,6 +36,8 @@ namespace
      * @date 06/04/2015
      * @file budget_menu.cpp
      * @brief Just trivializes statistics for a budget.  Use it or don't.  Doesn't matter.
+     * It mainly makes it easier to calculate, display, and maintain statistics
+     * for the budget.
      */
     typedef struct budget_statistics_data
     {
@@ -131,25 +135,18 @@ namespace
     
 }
 
-/* Local functions: */
+/* Local functions that don't really belong anywhere but here.  There are also lesser 
+ * functions used directly in menus that are within this namespace as well:*/
 namespace
 {
     data::budget_data load_basic_info(const std::string&);
-    void create_display(const std::vector<std::string>&, std::vector<std::string>&);
-    bool usr_delete_file(const std::string&);
     void display_error(const std::string&);
-    bool call_mod_budget(const std::string&);
-    bool call_create_budget(global::program_data&);
     std::vector<data::budget_data> load_basic_info_all(global::program_data&);
-    void money_alloc_list_display(const std::vector<data::money_alloc_data>&, std::vector<std::string>&);
-    std::string allocation_display(const data::money_alloc_data&);
-    std::string money_display(const data::money_t&);
-    bool user_get_money_value(data::money_t&);
-    bool choose_budget_date(global::program_data&, data::budget_data&);
-    std::string budget_statistic_display(const data::budget_data&);
     budget_statistics_data apply_allocation(data::budget_data&, const data::money_alloc_data&);
     bool sort_compare_budgets(const std::string&, const std::string&);
     void convert_to_money(std::string&);
+    std::string allocation_display(const data::money_alloc_data&);
+    std::string money_display(const data::money_t&);
     
     
     /**
@@ -175,51 +172,6 @@ namespace
         return tempbud;
     }
     
-    /**
-     * @brief Used to created a display vector for a window_data_class.  Specifically,
-     * it's used to create a display of a list of budgets the user has created.
-     */
-    inline void create_display(const std::vector<std::string>& paths, std::vector<std::string>& display)
-    {
-        display.erase(display.begin(), display.end());
-        
-        data::budget_data tempbud;
-        
-        for(unsigned int x(0); x < paths.size(); ++x)
-        {
-            if(fsys::is_file(paths[x]).value)
-            {
-                tempbud = std::move(load_basic_info(paths[x]));
-                display.push_back(std::move((common::date_disp(tempbud.timeframe.beg) + "   (" + 
-                        money_display(tempbud.total_money) + ")")));
-            }
-            else
-            {
-                display.push_back("ERROR: File doesn't exist!");
-            }
-        }
-    }
-    
-    /**
-     * @brief Deletes a file, but displays any errors to the user.  This is used
-     * for menu operations.
-     * @param path the path to delete (will not delete folders with sub-paths)
-     * @return true if the path does't exist.
-     */
-    inline bool usr_delete_file(const std::string& path)
-    {
-        using std::cout;
-        using std::endl;
-        
-        if(fsys::is_file(path).value)
-        {
-            fsys::result_data_boolean tempres(fsys::fdelete(path));
-            if(!tempres.value) display_error(tempres.error);
-            return tempres.value;
-        }
-        return !fsys::is_file(path).value;
-    }
-    
     inline void display_error(const std::string& mess)
     {
         using std::cout;
@@ -232,40 +184,6 @@ namespace
         cout<< mess<< endl;
         common::wait();
         common::cls();
-    }
-    
-    /**
-     * @brief Calls modify_budget, but also handles the loading
-     * and saving of the budget, as well as displaying any errors that occur.
-     * This essentially seperates the loading/saving code from the menus.  Menus
-    budget_statistic_display * should not save or load any data.
-     * @param path the path chosen.
-     * @return true if the budget was modified.
-     */
-    inline bool call_mod_budget(const std::string& path)
-    {
-        bool success(true);
-        data::budget_data tempbud;
-        
-        if(common::load_from_file(path, tempbud))
-        {
-            std::pair<bool, bool> tempres(menu::modify_budget(tempbud));
-            if(tempres.first && !tempres.second)
-            {
-                if(!common::save_to_file(path, tempbud))
-                {
-                    success = false;
-                    display_error("Could not save budget!");
-                }
-            }
-            else if(!tempres.first) success = false;
-        }
-        else
-        {
-            success = false;
-            display_error("Could not load file \"" + path + "\"!");
-        }
-        return success;
     }
     
     /**
@@ -285,115 +203,6 @@ namespace
             tempv.push_back(std::move(load_basic_info(*it)));
         }
         return tempv;
-    }
-    
-    /**
-     * @brief Allows the user to choose a date.
-     * @param b budget to choose month/year for.
-     * @return true if the user chose a valid date.
-     */
-    inline bool choose_budget_date(global::program_data& pdat, data::budget_data& b)
-    {
-        std::vector<data::budget_data> buds{load_basic_info_all(pdat)};
-        bool date_valid{false}, canceled{false};
-        
-        do
-        {
-            canceled = !common::user_choose_date(b.timeframe.beg);
-            date_valid = !canceled;
-            for(std::vector<data::budget_data>::const_iterator it{buds.begin()}; ((it != buds.end()) && date_valid); ++it)
-            {
-                if((b.timeframe.beg.gyear() == it->timeframe.beg.gyear()) && 
-                        (b.timeframe.beg.month() == it->timeframe.beg.month()) && (it->timeframe.beg.mday() == b.timeframe.beg.mday()))
-                {
-                    date_valid = false;
-                    common::cls();
-                    for(unsigned int x{0}; x < v_center::value; ++x) std::cout<< std::endl;
-                    common::center("You can not create a budget for the same day as another budget!");
-                    common::wait();
-                    common::cls();
-                }
-            }
-        }while(!date_valid && !canceled);
-        return (date_valid && !canceled);
-    }
-    
-    /**
-     * @brief This function handles creation of a new budget, as well as saving it
-     * if the user modified it.
-     * @return true if a new budget was created.
-     */
-    inline bool call_create_budget(global::program_data& pdata)
-    {
-        data::budget_data tempb;
-        std::pair<bool, bool> temp_result;
-        bool budget_created{false};
-        
-        tempb.id = std::move(data::new_budget_id(load_basic_info_all(pdata)));
-        tempb.timeframe.beg = tdata::current_time();
-        if(!choose_budget_date(pdata, tempb)) return budget_created;
-        temp_result = std::move(menu::modify_budget(tempb));
-        if(temp_result.first && !temp_result.second) //modified, but not canceled
-        {
-            if(!common::save_to_file((pdata.budget_folder + fsys::pref_slash() + 
-                    std::to_string(tempb.id) + std::string(global::budget_file_extension)), tempb))
-            {
-                display_error("Unable to save the budget!");
-            }
-            else
-            {
-                budget_created = true;
-            }
-        }
-        return budget_created;
-    }
-    
-    /**
-     * @brief returns a string in the form "$0.00"
-     */
-    inline std::string money_display(const data::money_t& money)
-    {
-        std::string temps{"$"};
-        temps += std::to_string(((long double)money / 100));
-        if(temps.find('.') != std::string::npos)
-        {
-            if((temps.size() - temps.find('.')) > 2) temps.resize((temps.find('.') + 3));
-        }
-        return temps;
-    }
-    
-    /**
-     * @brief creates a string representation of a money_alloc_data.
-     */
-    inline std::string allocation_display(const data::money_alloc_data& a)
-    {
-        using common::fit_str;
-        
-        constexpr unsigned int name_size{20};
-        
-        std::string temps{(fit_str(a.name, name_size) + std::string((name_size - fit_str(a.name, name_size).size()), ' ') + 
-                std::string(4, ' ') + money_display(a.value)) + std::string((10 - money_display(a.value).size()), ' ') + 
-                "Balance: "};
-        if(a.meta_data != nullptr)
-        {
-            temps += money_display(a.meta_data->balance);
-        }
-        else
-        {
-            temps += "[Error dereferencing data::money_alloc_data::meta_data::balance]";
-        }
-        return temps;
-    }
-    
-    /**
-     * @brief Takes a list of money allocations and creates a string representation of each allocation, 
-     * placing them in a list of strings.  This is used for created a window_data_class<data::money_alloc_data>.
-     */
-    inline void money_alloc_list_display(const std::vector<data::money_alloc_data>& allocations, std::vector<std::string>& disp)
-    {
-        disp.erase(disp.begin(), disp.end());
-        
-        for(unsigned int x{0}; x < allocations.size(); ++x) disp.push_back(std::move(allocation_display(allocations[x])));
     }
     
     /**
@@ -429,6 +238,102 @@ namespace
             s += "00";
         }
     }
+    
+    /**
+     * @brief Applies an allocation to a budget for the purpose of calculating it's
+     * statistics.  The budget is not changed, and all modification is temporary.
+     * @param budget The budget to use.
+     * @param allocation The allocation data.
+     * @return budget_statistics_data on a budget that has the allocation applied.
+     */
+    inline budget_statistics_data apply_allocation(data::budget_data& budget, const data::money_alloc_data& allocation)
+    {
+        budget_statistics_data stats;
+        data::money_alloc_data original_alloc;
+        bool found{false};
+        
+        for(std::vector<data::money_alloc_data>::iterator it{budget.allocs.begin()}; ((it != budget.allocs.end()) && !found); ++it)
+        {
+            if((allocation.id == it->id) && !found)
+            {
+                found = true;
+                original_alloc = std::move(*it);
+                (*it) = allocation;
+                
+                stats = std::move(budget_statistics_data{budget});
+                (*it) = std::move(original_alloc);
+            }
+        }
+        if(!found)
+        {
+            budget.allocs.push_back(allocation);
+            stats = std::move(budget_statistics_data{budget});
+            budget.allocs.pop_back();
+        }
+        return stats;
+    }
+    
+    /**
+     * @brief Used to sort budgets for budget_list_menu.
+     * @return true if
+     */
+    inline bool sort_compare_budgets(const std::string& b1, const std::string& b2)
+    {
+        return (load_basic_info(b1).timeframe.beg >= load_basic_info(b2).timeframe.beg);
+    }
+    
+    /**
+     * @brief creates a string representation of a money_alloc_data.
+     */
+    inline std::string allocation_display(const data::money_alloc_data& a)
+    {
+        using common::fit_str;
+        
+        constexpr unsigned int name_size{20};
+        
+        std::string temps{(fit_str(a.name, name_size) + std::string((name_size - fit_str(a.name, name_size).size()), ' ') + 
+                std::string(4, ' ') + money_display(a.value)) + std::string((10 - money_display(a.value).size()), ' ') + 
+                "Balance: "};
+        if(a.meta_data != nullptr)
+        {
+            temps += money_display(a.meta_data->balance);
+        }
+        else
+        {
+            temps += "[Error dereferencing data::money_alloc_data::meta_data::balance]";
+        }
+        return temps;
+    }
+    
+    /**
+     * @brief returns a string in the form "$0.00"
+     */
+    inline std::string money_display(const data::money_t& money)
+    {
+        std::string temps{"$"};
+        temps += std::to_string(((long double)money / 100));
+        if(temps.find('.') != std::string::npos)
+        {
+            if((temps.size() - temps.find('.')) > 2) temps.resize((temps.find('.') + 3));
+        }
+        return temps;
+    }
+    
+    
+}
+
+//Primary functions that are directly used in the menus:
+namespace
+{
+    bool user_get_money_value(data::money_t&);
+    std::string budget_statistic_display(const data::budget_data&);
+    bool call_create_budget(global::program_data&);
+    void money_alloc_list_display(const std::vector<data::money_alloc_data>&, std::vector<std::string>&);
+    bool call_mod_budget(global::program_data&, const std::string&);
+    bool usr_delete_file(const std::string&);
+    void create_display(const std::vector<std::string>&, std::vector<std::string>&);
+    bool spec_budget_timeframe(global::program_data&, data::budget_data&);
+    
     
     /**
      * @brief Gets a monetary value from the user.
@@ -473,46 +378,167 @@ namespace
     }
     
     /**
-     * @brief Applies an allocation to a budget for the purpose of calculating it's
-     * statistics.  The budget is not changed, and all modification is temporary.
-     * @param budget The budget to use.
-     * @param allocation The allocation data.
-     * @return budget_statistics_data on a budget that has the allocation applied.
+     * @brief Deletes a file, but displays any errors to the user.  This is used
+     * for menu operations.
+     * @param path the path to delete (will not delete folders with sub-paths)
+     * @return true if the path does't exist.
      */
-    inline budget_statistics_data apply_allocation(data::budget_data& budget, const data::money_alloc_data& allocation)
+    inline bool usr_delete_file(const std::string& path)
     {
-        budget_statistics_data stats;
-        data::money_alloc_data original_alloc;
-        bool found{false};
+        using std::cout;
+        using std::endl;
         
-        for(std::vector<data::money_alloc_data>::iterator it{budget.allocs.begin()}; ((it != budget.allocs.end()) && !found); ++it)
+        if(fsys::is_file(path).value)
         {
-            if((allocation.id == it->id) && !found)
-            {
-                found = true;
-                original_alloc = std::move(*it);
-                (*it) = allocation;
-                
-                stats = std::move(budget_statistics_data{budget});
-                (*it) = std::move(original_alloc);
-            }
+            fsys::result_data_boolean tempres(fsys::fdelete(path));
+            if(!tempres.value) display_error(tempres.error);
+            return tempres.value;
         }
-        if(!found)
-        {
-            budget.allocs.push_back(allocation);
-            stats = std::move(budget_statistics_data{budget});
-            budget.allocs.pop_back();
-        }
-        return stats;
+        return !fsys::is_file(path).value;
     }
     
     /**
-     * @brief Used to sort budgets for budget_list_menu.
-     * @return true if
+     * @brief Used to created a display vector for a window_data_class.  Specifically,
+     * it's used to create a display of a list of budgets the user has created.
      */
-    inline bool sort_compare_budgets(const std::string& b1, const std::string& b2)
+    inline void create_display(const std::vector<std::string>& paths, std::vector<std::string>& display)
     {
-        return (load_basic_info(b1).timeframe.beg >= load_basic_info(b2).timeframe.beg);
+        display.erase(display.begin(), display.end());
+        
+        data::budget_data tempbud;
+        
+        for(unsigned int x(0); x < paths.size(); ++x)
+        {
+            if(fsys::is_file(paths[x]).value)
+            {
+                tempbud = std::move(load_basic_info(paths[x]));
+                display.push_back(std::move((common::date_disp(tempbud.timeframe.beg) + "   (" + 
+                        money_display(tempbud.total_money) + ")")));
+            }
+            else
+            {
+                display.push_back("ERROR: File doesn't exist!");
+            }
+        }
+    }
+    
+    /**
+     * @brief Takes a list of money allocations and creates a string representation of each allocation, 
+     * placing them in a list of strings.  This is used for created a window_data_class<data::money_alloc_data>.
+     */
+    inline void money_alloc_list_display(const std::vector<data::money_alloc_data>& allocations, std::vector<std::string>& disp)
+    {
+        disp.erase(disp.begin(), disp.end());
+        
+        for(unsigned int x{0}; x < allocations.size(); ++x) disp.push_back(std::move(allocation_display(allocations[x])));
+    }
+    
+    /**
+     * @brief Calls modify_budget, but also handles the loading
+     * and saving of the budget, as well as displaying any errors that occur.
+     * This essentially seperates the loading/saving code from the menus.  Menus
+    budget_statistic_display * should not save or load any data.
+     * @param path the path chosen.
+     * @return true if the budget was modified.
+     */
+    inline bool call_mod_budget(global::program_data& pdat, const std::string& path)
+    {
+        bool success(true);
+        data::budget_data tempbud;
+        
+        if(common::load_from_file(path, tempbud))
+        {
+            std::pair<bool, bool> tempres{menu::modify_budget(pdat, tempbud)};
+            if(tempres.first && !tempres.second)
+            {
+                if(!common::save_to_file(path, tempbud))
+                {
+                    success = false;
+                    display_error("Could not save budget!");
+                }
+            }
+            else if(!tempres.first) success = false;
+        }
+        else
+        {
+            success = false;
+            display_error("Could not load file \"" + path + "\"!");
+        }
+        return success;
+    }
+    
+    /**
+     * @brief Allows the user to choose a timeframe for a budget.
+     * @return true if the user entered a valid timeframe that doesn't conflict with
+     * any existing budget's.
+     */
+    inline bool spec_budget_timeframe(global::program_data& pdata, data::budget_data& bud)
+    {
+        std::pair<bool, bool> res{false, false};
+        bool valid{false};
+        tdata::timeframe_class frame{bud.timeframe};
+        data::budget_data temp_budget;
+        
+        do
+        {
+            res = std::move(menu::modify_timeframe(frame));
+            pdata.budget_files = std::move(global::budget_paths(pdata.budget_folder));
+            valid = (res.first && !res.second);
+            if(valid) //to keep the "overlaps" error from showing if user cancels
+            {
+                for(std::vector<std::string>::const_iterator it{pdata.budget_files.begin()}; ((it != pdata.budget_files.end()) && valid); ++it)
+                {
+                    temp_budget = std::move(load_basic_info(*it));
+                    if(bud.id != temp_budget.id)
+                    {
+                        valid = !temp_budget.timeframe.overlaps(frame);
+                    }
+                }
+                if(!valid)
+                {
+                    using std::cout;
+                    using std::endl;
+                    
+                    common::cls();
+                    for(unsigned int x{0}; x < v_center::value; ++x) cout<< endl;
+                    common::center("Another budget's timeframe overlaps with the one you chose.  You \
+    must choose another!");
+                    common::wait();
+                    common::cls();
+                }
+            }
+        }while(!valid && !res.second);
+        if(valid && res.first && !res.second) bud.timeframe = std::move(frame);
+        return (valid && res.first && !res.second);
+    }
+    
+    /**
+     * @brief This function handles creation of a new budget, as well as saving it
+     * if the user modified it.
+     * @return true if a new budget was created.
+     */
+    inline bool call_create_budget(global::program_data& pdata)
+    {
+        data::budget_data tempb;
+        std::pair<bool, bool> temp_result;
+        bool budget_created{false};
+        
+        tempb.id = std::move(data::new_budget_id(load_basic_info_all(pdata)));
+        tempb.timeframe.beg = tdata::current_time();
+        if(!spec_budget_timeframe(pdata, tempb)) return budget_created;
+        temp_result = std::move(menu::modify_budget(pdata, tempb));
+        if(temp_result.first && !temp_result.second) //modified, but not canceled
+        {
+            if(!common::save_to_file(data::budget_path(pdata, tempb), tempb))
+            {
+                display_error("Unable to save the budget!");
+            }
+            else
+            {
+                budget_created = true;
+            }
+        }
+        return budget_created;
     }
     
     
@@ -588,7 +614,7 @@ is permanent!"))
                             {
                                 if(!pdat.budget_files.empty())
                                 {
-                                    call_mod_budget(scroll_window.selected());
+                                    call_mod_budget(pdat, scroll_window.selected());
                                     pdat.budget_files = std::move(global::budget_paths(pdat.budget_folder));
                                     std::sort(pdat.budget_files.begin(), pdat.budget_files.end(), sort_compare_budgets);
                                 }
@@ -630,9 +656,10 @@ is permanent!"))
      * result.first = whether the budget was modified,
      * result.second = whether the user canceled the operation.
      */
-    std::pair<bool, bool> modify_budget(data::budget_data& b)
+    std::pair<bool, bool> modify_budget(global::program_data& pdat __attribute__((unused)), data::budget_data& b)
     {
         //todo add a budget report that shows all allocations, balances, and subtotals that can be easily shared and looks nice.
+        //todo add ability to modify time frame fo the budget.
         using scrollDisplay::window_data_class;
         using keyboard::key_code_data;
         using std::cout;

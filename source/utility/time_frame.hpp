@@ -3,6 +3,7 @@
 #include <utility>
 #include <iostream>
 #include <string>
+#include <vector>
 
 #include "utility/time_class.hpp"
 
@@ -67,6 +68,9 @@ namespace tdata
         void sub_year(tdata::time_class&) const;
         
         tdata::time_class op_on(const tdata::time_class&, const bool&) const;
+        
+    public:
+        static std::vector<std::pair<unit_t, std::string> > unit_names();
     } time_interval_type;
     
     /**

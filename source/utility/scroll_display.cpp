@@ -8,6 +8,7 @@
 #include <utility>
 
 #include "scroll_display.hpp"
+#include "utility/time_frame.hpp"
 #include "data/budget_data.hpp"
 
 #ifndef ethrow
@@ -604,6 +605,7 @@ namespace scrollDisplay
     }
     
     
+    template class window_data_class<tdata::time_interval_type::unit_t>;
     template class window_data_class<std::string>;
     template class window_data_class<data::money_alloc_data>;
 }
@@ -738,6 +740,7 @@ namespace scrollDisplay
     template void display_window(window_data_class<std::string>&,
             const std::pair<char, char>&);
     template void display_window<data::money_alloc_data>(window_data_class<data::money_alloc_data>&, const std::pair<char, char>&);
+    template void display_window<tdata::time_interval_type::unit_t>(window_data_class<tdata::time_interval_type::unit_t>&, const std::pair<char, char>&);
     
     /**
      * @brief Displays a scroll window.  Does not append a new line.
