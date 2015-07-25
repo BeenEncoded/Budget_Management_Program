@@ -581,6 +581,18 @@ namespace scrollDisplay
         return (*(this->data))[this->window.gpos().whole];
     }
     
+    /**
+     * @brief Used when you can't reference the selected object directly.  Such
+     * a case would be when you plan on modifying the vector that this class
+     * holds a pointer to.
+     */
+    template<class type>
+    type window_data_class<type>::cselected()
+    {
+        type t{this->selected()};
+        return t;
+    }
+    
     template<class type>
     scroll_display_class& window_data_class<type>::win()
     {

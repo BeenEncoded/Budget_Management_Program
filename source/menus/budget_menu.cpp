@@ -147,6 +147,7 @@ namespace
     void convert_to_money(std::string&);
     std::string allocation_display(const data::money_alloc_data&);
     std::string money_display(const data::money_t&);
+    bool timeframe_conflict(const data::budget_data&, global::program_data&);
     
     
     /**
@@ -317,6 +318,28 @@ namespace
             if((temps.size() - temps.find('.')) > 2) temps.resize((temps.find('.') + 3));
         }
         return temps;
+    }
+    
+    inline bool timeframe_conflict(const data::budget_data& b, global::program_data& pdata)
+    {
+        data::budget_data tempbud;
+        
+        pdata.budget_files = std::move(global::budget_paths(pdata.budget_folder));
+        for(std::vector<std::string>::iterator it{pdata.budget_files.begin()}; it != pdata.budget_files.end();)
+        {
+            if(!fsys::is_file(*it)) //just a redundancy
+            {
+                it = pdata.budget_files.erase(it);
+                continue;
+            }
+            tempbud = std::move(load_basic_info(*it));
+            if(tempbud.id != b.id)
+            {
+                if(tempbud.timeframe.overlaps(b.timeframe)) return true;
+            }
+            ++it;
+        }
+        return false;
     }
     
     
@@ -593,10 +616,10 @@ namespace menu
                         if(!pdat.budget_files.empty())
                         {
                             if(common::prompt_user("Are you sure you want to delete the \
-budget for " + common::date_disp(load_basic_info(scroll_window.selected()).timeframe.beg) + "?  This \
+budget for " + common::date_disp(load_basic_info(scroll_window.cselected()).timeframe.beg) + "?  This \
 is permanent!"))
                             {
-                                if(usr_delete_file(scroll_window.selected()))
+                                if(usr_delete_file(scroll_window.cselected()))
                                 {
                                     scroll_window.remove_selected();
                                 }
@@ -614,7 +637,7 @@ is permanent!"))
                             {
                                 if(!pdat.budget_files.empty())
                                 {
-                                    call_mod_budget(pdat, scroll_window.selected());
+                                    call_mod_budget(pdat, scroll_window.cselected());
                                     pdat.budget_files = std::move(global::budget_paths(pdat.budget_folder));
                                     std::sort(pdat.budget_files.begin(), pdat.budget_files.end(), sort_compare_budgets);
                                 }
@@ -671,7 +694,7 @@ is permanent!"))
         window_data_class<data::money_alloc_data> scroll_display{b.allocs, money_alloc_list_display};
         key_code_data key;
         
-        scroll_display.win().window_size() = 7;
+        scroll_display.win().window_size() = 6;
         user_input::cl();
         do
         {
@@ -680,6 +703,7 @@ is permanent!"))
             cout<< endl;
             common::center("Budget starting " + common::date_disp(b.timeframe.beg));
             cout<< endl;
+            cout<< "Budget ends "<< common::date_disp(b.timeframe.cinterval().add_to(b.timeframe.beg))<< endl;
             
             data::generate_meta_data(b);
             scrollDisplay::display_window(scroll_display);
@@ -693,6 +717,7 @@ is permanent!"))
             cout<< " d -------> Distribute money"<< endl;
             cout<< " [SPCE] --> Move Selected"<< endl;
             cout<< " s -------> Statistics"<< endl;
+            cout<< " L -------> Length of time the budgets is active"<< endl;
             cout<< endl;
             cout<< " [BCKSPC] -  Done"<< endl;
             cout<< " c -  -----  Cancel";
@@ -754,6 +779,36 @@ is permanent!"))
                             {
                                 b.allocs.push_back(std::move(new_allocation));
                                 result.first = true;
+                            }
+                        }
+                        break;
+                        
+                        case 'l':
+                        {
+                            tdata::time_interval_type temp_interval{b.timeframe.cinterval()};
+                            std::pair<bool, bool> tempres{std::move(menu::modify_interval(temp_interval))};
+                            
+                            if(tempres.first && !tempres.second)
+                            {
+                                data::budget_data temp_bud{b};
+                                temp_bud.timeframe = std::move(tdata::timeframe_class{temp_bud.timeframe.beg, temp_interval});
+                                
+                                while(tempres.first && !tempres.second && 
+                                        timeframe_conflict(temp_bud, pdat))
+                                {
+                                    common::cls();
+                                    for(unsigned int x{0}; x < v_center::value; ++x) cout<< endl;
+                                    common::center("The chosen length of time overlaps with another timeframe!");
+                                    common::wait();
+                                    common::cls();
+                                    tempres = std::move(menu::modify_interval(temp_interval));
+                                    temp_bud.timeframe = std::move(tdata::timeframe_class{temp_bud.timeframe.beg, temp_interval});
+                                }
+                                if(tempres.first && !tempres.second)
+                                {
+                                    b.timeframe = std::move(tdata::timeframe_class{b.timeframe.beg, temp_interval});
+                                    result.first = true;
+                                }
                             }
                         }
                         break;

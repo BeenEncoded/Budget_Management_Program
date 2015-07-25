@@ -114,6 +114,7 @@ namespace scrollDisplay
         
         void remove_selected();
         type& selected();
+        type cselected();
         scroll_display_class& win();
         const std::vector<type>* const gdata() const;
         
