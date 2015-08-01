@@ -564,6 +564,44 @@ namespace
         return budget_created;
     }
     
+    /**
+     * @brief Allows the user to modify the length of time a budget remains active.
+     * @return True if the length was modified.
+     */
+    inline bool modify_budget_length(global::program_data& pdata, data::budget_data& b)
+    {
+        using std::cout;
+        using std::endl;
+        
+        tdata::time_interval_type temp_interval{b.timeframe.cinterval()};
+        std::pair<bool, bool> tempres{std::move(menu::modify_interval(temp_interval))};
+        
+        if(tempres.first && !tempres.second)
+        {
+            data::budget_data temp_bud{b};
+            temp_bud.timeframe = std::move(tdata::timeframe_class{temp_bud.timeframe.beg, temp_interval});
+            
+            while(tempres.first && !tempres.second && 
+                    timeframe_conflict(temp_bud, pdata))
+            {
+                common::cls();
+                for(unsigned int x{0}; x < v_center::value; ++x) cout<< endl;
+                common::center("The chosen length of time overlaps with another timeframe!");
+                common::wait();
+                common::cls();
+                temp_interval = b.timeframe.cinterval();
+                tempres = std::move(menu::modify_interval(temp_interval));
+                temp_bud.timeframe = std::move(tdata::timeframe_class{temp_bud.timeframe.beg, temp_interval});
+            }
+            if(tempres.first && !tempres.second)
+            {
+                b.timeframe = std::move(tdata::timeframe_class{b.timeframe.beg, temp_interval});
+                return true;
+            }
+        }
+        return false;
+    }
+    
     
 }
 
@@ -682,7 +720,6 @@ is permanent!"))
     std::pair<bool, bool> modify_budget(global::program_data& pdat __attribute__((unused)), data::budget_data& b)
     {
         //todo add a budget report that shows all allocations, balances, and subtotals that can be easily shared and looks nice.
-        //todo add ability to modify time frame fo the budget.
         using scrollDisplay::window_data_class;
         using keyboard::key_code_data;
         using std::cout;
@@ -785,31 +822,7 @@ is permanent!"))
                         
                         case 'l':
                         {
-                            tdata::time_interval_type temp_interval{b.timeframe.cinterval()};
-                            std::pair<bool, bool> tempres{std::move(menu::modify_interval(temp_interval))};
-                            
-                            if(tempres.first && !tempres.second)
-                            {
-                                data::budget_data temp_bud{b};
-                                temp_bud.timeframe = std::move(tdata::timeframe_class{temp_bud.timeframe.beg, temp_interval});
-                                
-                                while(tempres.first && !tempres.second && 
-                                        timeframe_conflict(temp_bud, pdat))
-                                {
-                                    common::cls();
-                                    for(unsigned int x{0}; x < v_center::value; ++x) cout<< endl;
-                                    common::center("The chosen length of time overlaps with another timeframe!");
-                                    common::wait();
-                                    common::cls();
-                                    tempres = std::move(menu::modify_interval(temp_interval));
-                                    temp_bud.timeframe = std::move(tdata::timeframe_class{temp_bud.timeframe.beg, temp_interval});
-                                }
-                                if(tempres.first && !tempres.second)
-                                {
-                                    b.timeframe = std::move(tdata::timeframe_class{b.timeframe.beg, temp_interval});
-                                    result.first = true;
-                                }
-                            }
+                            if(modify_budget_length(pdat, b)) result.first = true;
                         }
                         break;
                         
